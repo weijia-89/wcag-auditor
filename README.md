@@ -1,4 +1,4 @@
-# wcag-auditor
+# wcagAuditor
 
 Scan an HTML file or URL for WCAG 2.2 violations with axe-core, then ask a local LLM (Ollama) to suggest a fix for each one. Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`.
 
