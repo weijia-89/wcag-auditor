@@ -1,0 +1,10 @@
+{
+  "schema_compliance_rate": 0.0,
+  "criterion_accuracy": 0.0,
+  "fix_applicability": 0.0,
+  "hallucination_rate": 0.0,
+  "false_negative_rate": 0.0,
+  "impact_level_accuracy": 0.0,
+  "_ci_note": "Only schema_compliance_rate is CI-checked (MOCK_LLM=1). All others require make eval-full.",
+  "_note": "Update manually after first full eval run. Never update via script."
+}

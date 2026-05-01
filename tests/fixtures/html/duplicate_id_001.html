@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duplicate ID Test — wcag-auditor fixture</title>
+</head>
+<body>
+  <main>
+    <h1>Article Page</h1>
+
+    <!-- Violation: Three elements share the same id="section-header" — axe rule: duplicate-id, WCAG 4.1.1 -->
+    <section>
+      <h2 id="section-header">Introduction</h2>
+      <p>First section content. This section discusses the introduction to the topic.</p>
+    </section>
+
+    <section>
+      <!-- Duplicate id — axe rule: duplicate-id -->
+      <h2 id="section-header">Main Content</h2>
+      <p>Second section content. This section covers the main points of the article.</p>
+    </section>
+
+    <section>
+      <!-- Duplicate id again — axe rule: duplicate-id -->
+      <h2 id="section-header">Conclusion</h2>
+      <p>Third section content. This section wraps up the discussion.</p>
+    </section>
+  </main>
+</body>
+</html>

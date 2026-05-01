@@ -1,0 +1,18 @@
+[project]
+name = "wcag-auditor"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "playwright>=1.44",
+    "pydantic>=2.7",
+    "typer>=0.12",
+    "ollama>=0.2",
+    "sqlite-utils>=3.36",
+    "rich>=13.7",
+]
+[project.scripts]
+wcag-auditor = "wcag_auditor.cli:app"
+[dependency-groups]
+dev = ["pytest>=8.2","pytest-asyncio>=0.23","pytest-json-report>=1.5","ruff>=0.4"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]

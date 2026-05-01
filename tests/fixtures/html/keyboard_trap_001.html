@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyboard Trap Test — wcag-auditor fixture</title>
+  <style>
+    .scrollable-panel {
+      height: 150px;
+      overflow-y: scroll;
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    .clickable-widget {
+      cursor: pointer;
+      background: #eee;
+      padding: 12px;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Keyboard Accessibility Test</h1>
+
+    <!-- Violation: scrollable region is not keyboard focusable — axe rule: scrollable-region-focusable, WCAG 2.1.1 -->
+    <div class="scrollable-panel">
+      <p>Line 1 of scrollable content</p>
+      <p>Line 2 of scrollable content</p>
+      <p>Line 3 of scrollable content</p>
+      <p>Line 4 of scrollable content</p>
+      <p>Line 5 of scrollable content</p>
+      <p>Line 6 of scrollable content</p>
+      <p>Line 7 of scrollable content</p>
+      <p>Line 8 — end of scrollable region</p>
+    </div>
+
+    <!-- Violation: interactive div uses onclick but no keyboard handler and tabindex=-1 -->
+    <!-- axe rule: scrollable-region-focusable or keyboard-related rules -->
+    <div
+      class="clickable-widget"
+      tabindex="-1"
+      onclick="alert('clicked')"
+    >
+      Click me (not keyboard accessible)
+    </div>
+
+    <!-- Standard focusable element for contrast -->
+    <button type="button" tabindex="-1">Also not focusable via keyboard tab</button>
+  </main>
+</body>
+</html>

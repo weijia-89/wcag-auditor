@@ -1,0 +1,140 @@
+[
+  {
+    "fixture_id": "missing_alt_001",
+    "html_file": "tests/fixtures/html/missing_alt_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "image-alt",
+        "impact": "critical",
+        "wcag_criterion": "1.1.1",
+        "nodes_count": 2
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": "img:first-of-type",
+        "fix_html": "<img src='logo.png' alt='Company logo'>",
+        "wcag_criterion": "1.1.1",
+        "impact": "critical"
+      }
+    ],
+    "negative_wcag_criteria": ["2.4.3", "3.3.2", "4.1.2", "1.4.3"]
+  },
+  {
+    "fixture_id": "missing_form_label_001",
+    "html_file": "tests/fixtures/html/missing_form_label_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "label",
+        "impact": "serious",
+        "wcag_criterion": "1.3.1",
+        "nodes_count": 3
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": "input[type='text']",
+        "fix_html": "<label for='name'>Your name</label>\n<input type='text' id='name' name='name' placeholder='Your name'>",
+        "wcag_criterion": "1.3.1",
+        "impact": "serious"
+      }
+    ],
+    "negative_wcag_criteria": ["1.1.1", "2.4.3", "4.1.1", "1.4.3"]
+  },
+  {
+    "fixture_id": "duplicate_id_001",
+    "html_file": "tests/fixtures/html/duplicate_id_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "duplicate-id",
+        "impact": "minor",
+        "wcag_criterion": "4.1.1",
+        "nodes_count": 3
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": "h2#section-header",
+        "fix_html": "<h2 id='intro-header'>Introduction</h2>",
+        "wcag_criterion": "4.1.1",
+        "impact": "minor"
+      }
+    ],
+    "negative_wcag_criteria": ["1.1.1", "1.3.1", "2.4.3", "3.1.1"]
+  },
+  {
+    "fixture_id": "no_lang_001",
+    "html_file": "tests/fixtures/html/no_lang_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "html-has-lang",
+        "impact": "serious",
+        "wcag_criterion": "3.1.1",
+        "nodes_count": 1
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": "html",
+        "fix_html": "<html lang='en'>",
+        "wcag_criterion": "3.1.1",
+        "impact": "serious"
+      }
+    ],
+    "negative_wcag_criteria": ["1.1.1", "1.3.1", "4.1.1", "2.1.1"]
+  },
+  {
+    "fixture_id": "keyboard_trap_001",
+    "html_file": "tests/fixtures/html/keyboard_trap_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "scrollable-region-focusable",
+        "impact": "moderate",
+        "wcag_criterion": "2.1.1",
+        "nodes_count": 1
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": ".scrollable-panel",
+        "fix_html": "<div class='scrollable-panel' tabindex='0' role='region' aria-label='Scrollable content'>",
+        "wcag_criterion": "2.1.1",
+        "impact": "moderate"
+      }
+    ],
+    "negative_wcag_criteria": ["1.1.1", "1.3.1", "4.1.1", "3.1.1"]
+  },
+  {
+    "fixture_id": "missing_button_text_001",
+    "html_file": "tests/fixtures/html/missing_button_text_001.html",
+    "axe_expected_violations": [
+      {
+        "id": "button-name",
+        "impact": "critical",
+        "wcag_criterion": "4.1.2",
+        "nodes_count": 2
+      },
+      {
+        "id": "image-alt",
+        "impact": "critical",
+        "wcag_criterion": "1.1.1",
+        "nodes_count": 1
+      }
+    ],
+    "expected_fixes": [
+      {
+        "element_selector": "button:first-of-type",
+        "fix_html": "<button aria-label='Submit'>Submit</button>",
+        "wcag_criterion": "4.1.2",
+        "impact": "critical"
+      },
+      {
+        "element_selector": "a img",
+        "fix_html": "<img src='home-icon.png' alt='Home'>",
+        "wcag_criterion": "1.1.1",
+        "impact": "critical"
+      }
+    ],
+    "negative_wcag_criteria": ["1.3.1", "3.1.1", "2.1.1", "1.4.3"]
+  }
+]

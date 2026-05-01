@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Missing Alt Text Test — wcag-auditor fixture</title>
+</head>
+<body>
+  <main>
+    <h1>Product Page</h1>
+
+    <!-- Violation 1: No alt attribute at all — axe rule: image-alt, WCAG 1.1.1 -->
+    <img src="logo.png">
+
+    <!-- Violation 2: Empty alt on a non-decorative image — axe rule: image-alt, WCAG 1.1.1 -->
+    <!-- An image with meaningful content should not have alt="" unless purely decorative -->
+    <img src="product-photo.jpg" alt="">
+
+    <p>Welcome to our store. See the images above for our branding and featured product.</p>
+  </main>
+</body>
+</html>
