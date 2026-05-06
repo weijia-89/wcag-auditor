@@ -1,6 +1,6 @@
 # Architecture
 
-A modular monolith. One Python package, six modules, no microservices. Each module hides one decision; replacing it should mean editing one file.
+One Python package, six modules. Each module encapsulates one concern; the intent is that swapping an implementation means editing one file.
 
 ## Diagram
 
@@ -104,6 +104,21 @@ target (str) -> Auditor.audit
     -> save_report (optional)
     -> Rich table or JSON
 ```
+
+## Build system
+
+`pyproject.toml` uses hatchling as the build backend. The wheel package root is `src/wcag_auditor`. `[tool.pytest.ini_options]` sets `pythonpath = ["src"]` so tests import directly from the source tree without an editable install.
+
+## CI
+
+`.github/workflows/ci.yml` runs on push and PR to `main`.
+
+- Runner: `ubuntu-latest`, Python 3.11 via `astral-sh/setup-uv@v4`.
+- Install: `uv sync --all-groups` (pulls dev group: pytest, ruff, etc.).
+- Test step: `uv run pytest tests/unit/ -v`. Unit tests use `MockClient` and recorded axe output; no Playwright binary or live Ollama needed in CI.
+- `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is set at the workflow level.
+
+The full eval (`make eval-full`) is not in CI because it requires a running Ollama server and a Playwright-installed Chromium. Run it locally before tagging a release.
 
 ## What we deliberately did not do
 

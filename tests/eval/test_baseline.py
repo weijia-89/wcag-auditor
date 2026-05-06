@@ -1,23 +1,17 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 
 import pytest
 
 from wcag_auditor.models import (
-    AuditReport,
     AuditResult,
     ImpactLevel,
-    ViolationFix,
     ViolationInput,
 )
 from wcag_auditor.llm_client import MockClient
 from wcag_auditor.eval_metrics import (
-    CriterionAccuracyMetric,
-    HallucinationMetric,
-    ImpactAccuracyMetric,
     SchemaComplianceMetric,
 )
 

@@ -2,7 +2,44 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
-## [Unreleased]
+## [0.2.1] - 2026-05-06
+
+Five findings from the second health audit (H1–H5) addressed.
+
+### Added
+
+- `_sanitize_html_for_prompt` in `llm_client.py` (H2). Found that `html_context[:2000]` was
+  going into Ollama prompts verbatim — a malicious HTML file could slip `System:` or `###`
+  headers past the system prompt. Turned out regex redaction of those line-start patterns was
+  enough to close the practical injection path without mangling normal HTML. Also strips script
+  blocks, model role-tags (`<|system|>`), null bytes, and control characters. Applied in both
+  `OllamaClient.generate_fix` and `Auditor.audit` (which now calls the sanitizer on the raw
+  file read, not just at the LLM boundary).
+- `WCAG_LLM_BATCH_SIZE` env var in `auditor.py` (H4). The N+1 sequential LLM loop is still
+  sequential — learned that wiring in real async concurrency would require rewriting the
+  `LLMClientProtocol` interface, which isn't a one-line change. Added the env var and the
+  per-batch progress log so the interface exists for a future `asyncio.gather` pass without
+  any caller needing to change.
+- `tests/unit/test_database.py` — 11 new tests for `save_report`, `list_reports`, `get_report`,
+  the `WCAG_DB_PATH` override, and the 0600 chmod (H3). Found that none of the three public
+  database functions had any unit coverage; a schema migration would have silently broken
+  persistence in CI.
+- `tests/unit/test_auditor.py` — 10 new tests for `Auditor` orchestration: mock-mode path,
+  sidecar loading, LLM failure swallowing, report assembly, batch-size env var, and
+  html_context sanitization end-to-end (H3).
+- `tests/unit/test_llm_sanitizer.py` — 16 targeted tests for `_sanitize_html_for_prompt`:
+  script removal, role-header redaction, role-tag removal, control char stripping, truncation,
+  and clean passthrough (H2).
+- Ruff lint step added to `.github/workflows/ci.yml` before the test run (H5). Was surprised
+  how many unused imports had accumulated across the test files — 10 fixable violations, all
+  auto-corrected.
+
+### Changed
+
+- `Makefile` `check-regression` target now detects an all-zeros `eval_baseline.json` and
+  prints a clear warning before skipping — rather than running a gate that can never fail
+  (H1). The `--ci` flag is also passed so only `schema_compliance_rate` is checked under
+  `MOCK_LLM=1`, which is the only metric that means anything without a real Ollama instance.
 
 ## [0.2.0] - 2026-04-30
 
@@ -50,6 +87,6 @@ Initial scaffold.
 - 6 curated HTML fixtures covering image-alt, label, button-name, link-name, color-contrast, html-has-lang.
 - Golden dataset for eval (positive + negative criteria lists).
 
-[Unreleased]: https://example.com/wcag-auditor/compare/0.2.0...HEAD
+[0.2.1]: https://example.com/wcag-auditor/compare/0.2.0...0.2.1
 [0.2.0]: https://example.com/wcag-auditor/compare/0.1.0...0.2.0
 [0.1.0]: https://example.com/wcag-auditor/releases/tag/0.1.0

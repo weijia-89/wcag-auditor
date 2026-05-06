@@ -7,7 +7,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 _SCRIPT_PATH = _PROJECT_ROOT / "scripts" / "check_regression.py"

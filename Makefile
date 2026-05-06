@@ -28,10 +28,18 @@ lint:
 	uv run ruff check src/ tests/
 
 check-regression:
+	@uv run python -c "\
+import json, sys; \
+b = json.loads(open('eval_baseline.json').read()); \
+vals = [v for k, v in b.items() if not k.startswith('_')]; \
+is_zero = vals and all(v == 0.0 for v in vals); \
+print('WARNING: eval_baseline.json is all-zeros. Run \"make eval-full\" against a real Ollama instance first to generate a meaningful baseline. Regression gate is SKIPPING (not failing) until baseline is populated.', file=sys.stderr) if is_zero else None; \
+sys.exit(3) if is_zero else None"  || [ $$? -eq 3 ] && exit 0
 	uv run python scripts/check_regression.py \
 	  --results eval_results.json \
 	  --baseline eval_baseline.json \
-	  --max-drop 0.05
+	  --max-drop 0.05 \
+	  --ci
 
 # Supply-chain audit. Assumes pip-audit is installed (e.g. `uv tool install pip-audit`).
 # Tip: combine with `uv lock` for hash-pinned reproducible deps.

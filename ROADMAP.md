@@ -19,9 +19,9 @@ Updated 2026-04-30. Order roughly reflects priority within each section, not com
 
 ## Won't-do
 
-These are explicit. Saying no is part of the design.
+These are explicit non-goals.
 
-- **Microservices.** This is a CLI. One process, one lifetime, six modules. Splitting into services adds RPC, deployment, and observability for zero user-visible gain. The boring tech wins.
+- **Microservices.** This is a CLI. One process, one lifetime, six modules. Splitting into services adds RPC, deployment, and observability for zero user-visible gain.
 - **Kubernetes / Helm chart / operator.** Wrong shape entirely. If you want to run this at scale, run it in a job runner with a real result store. We will not own a k8s component.
 - **GraphQL API.** No API. There's a CLI and a SQLite file. If you want a server, write one against the SQLite file.
 - **Cloud LLM backends (OpenAI, Anthropic).** Local-only by design. Adds dependency on a paid API and ships node HTML to a third party. Hard line.

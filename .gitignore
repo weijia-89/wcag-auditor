@@ -67,3 +67,6 @@ Thumbs.db
 *.db-shm
 *.db-wal
 src/wcag_auditor/static/axe.min.js
+
+# Internal dev artifacts — not for public repo
+health_report.md

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Protocol, runtime_checkable
 
 from wcag_auditor.models import AuditResult, ImpactLevel, ViolationFix, ViolationInput
@@ -49,6 +50,42 @@ _FIX_SCHEMA: dict = {
 # response or a prompt-injection trying to OOM the parser. See B5 in CHANGELOG.
 _MAX_LLM_BYTES = 64_000
 
+# Regex for lines that look like prompt-injection role headers.
+_ROLE_HEADER_RE = re.compile(
+    r"^(#{1,6}\s|system:|assistant:|human:|user:|ignore\b)",
+    re.IGNORECASE | re.MULTILINE,
+)
+# Matches <script ...>...</script> blocks including across newlines.
+_SCRIPT_TAG_RE = re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL)
+# Role-tag style injections like <|system|> or </s>.
+_ROLE_TAG_RE = re.compile(r"<\|[^|>]{1,32}\|>|</?s>", re.IGNORECASE)
+
+
+def _sanitize_html_for_prompt(html: str) -> str:
+    """Sanitize arbitrary page HTML before including it in an LLM prompt.
+
+    Steps applied in order:
+    1. Strip null bytes and ASCII control characters (except newline/tab).
+    2. Remove <script>...</script> blocks.
+    3. Remove role-tag style sequences used by some model tokenizers.
+    4. Redact lines that begin with prompt-injection markers
+       (###, System:, Assistant:, Human:, Ignore ...).
+    5. Truncate to 2000 chars so a huge page never blows the context window.
+
+    The result is still HTML — we are not HTML-escaping the whole blob,
+    just neutering the patterns that commonly show up in prompt-injection PoCs.
+    """
+    # Step 1: drop null bytes + control chars (keep \n \t \r)
+    html = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", html)
+    # Step 2: strip script blocks
+    html = _SCRIPT_TAG_RE.sub("<!-- script removed -->", html)
+    # Step 3: strip model-specific role tags
+    html = _ROLE_TAG_RE.sub("", html)
+    # Step 4: redact injection-looking lines
+    html = _ROLE_HEADER_RE.sub("[REDACTED] ", html)
+    # Step 5: truncate
+    return html[:2000]
+
 
 @runtime_checkable
 class LLMClientProtocol(Protocol):
@@ -95,7 +132,7 @@ class OllamaClient:
                 "impact": violation.impact.value,
                 "wcag_criterion": violation.wcag_criterion,
                 "nodes": nodes_summary,
-                "html_context_snippet": html_context[:2000] if html_context else "",
+                "html_context_snippet": _sanitize_html_for_prompt(html_context) if html_context else "",
             },
             ensure_ascii=False,
         )

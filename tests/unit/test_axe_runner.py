@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from wcag_auditor.axe_runner import (
-    AXE_JS_PATH,
     _check_http_url_safe,
     _extract_wcag_criterion,
     _path_to_url,

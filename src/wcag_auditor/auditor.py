@@ -8,8 +8,15 @@ from rich import print as rprint
 
 from wcag_auditor.axe_runner import run_axe, run_axe_from_json
 from wcag_auditor.database import save_report
-from wcag_auditor.llm_client import LLMClientProtocol, get_client
+from wcag_auditor.llm_client import LLMClientProtocol, _sanitize_html_for_prompt, get_client
 from wcag_auditor.models import AuditReport, AuditResult, ViolationInput
+
+# WCAG_LLM_BATCH_SIZE controls how many violations are processed per logical
+# "batch" pass. The current implementation is still sequential — this env var
+# establishes the interface so future async work can honour it without changing
+# the call site. Default 0 means "process all violations in one batch" (no
+# splitting). Set to a positive integer to log per-batch progress clearly.
+_DEFAULT_BATCH_SIZE = 0
 
 
 def _is_url(path_or_url: str) -> bool:
@@ -67,8 +74,16 @@ class Auditor:
 
         rprint(f"[bold]Found {len(violations)} violation(s)[/bold]", file=sys.stderr)
 
-        html_context = _read_html_context(path_or_url)
+        raw_html = _read_html_context(path_or_url)
+        html_context = _sanitize_html_for_prompt(raw_html) if raw_html else ""
         results: list[AuditResult] = []
+
+        batch_size = int(os.environ.get("WCAG_LLM_BATCH_SIZE", _DEFAULT_BATCH_SIZE))
+        if batch_size > 0:
+            rprint(
+                f"[dim]  Batch size: {batch_size} (sequential; batching interface established)[/dim]",
+                file=sys.stderr,
+            )
 
         for i, violation in enumerate(violations, 1):
             rprint(
