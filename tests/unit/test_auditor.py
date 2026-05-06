@@ -281,6 +281,49 @@ class TestBatchSizeEnvVar:
 # HTML context sanitization
 # ---------------------------------------------------------------------------
 
+class TestReadHtmlContextCwdGuard:
+    """_read_html_context must honour the CWD confinement guard added in round 3.
+
+    All other auditor tests set WCAG_ALLOW_FILE_OUTSIDE_CWD=1, which bypasses
+    the guard entirely.  These two tests exercise the real guard path.
+    """
+
+    def test_out_of_cwd_path_returns_empty_string(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A file outside cwd without the override env var must yield ''."""
+        # Ensure the bypass is NOT set.
+        monkeypatch.delenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", raising=False)
+
+        # tmp_path is under /tmp/…, cwd is the project root — definitely outside.
+        html_file = tmp_path / "outside.html"
+        html_file.write_text("<html><body>secret</body></html>", encoding="utf-8")
+
+        from wcag_auditor.auditor import _read_html_context
+
+        result = _read_html_context(str(html_file))
+        assert result == "", (
+            f"Expected '' for out-of-cwd path, got {result!r}"
+        )
+
+    def test_in_cwd_path_returns_content(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """A file inside cwd without the override env var must yield its content."""
+        monkeypatch.delenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", raising=False)
+        monkeypatch.chdir(tmp_path)  # Make tmp_path the cwd for this test.
+
+        html_file = tmp_path / "page.html"
+        html_file.write_text("<html><body>hello</body></html>", encoding="utf-8")
+
+        from wcag_auditor.auditor import _read_html_context
+
+        result = _read_html_context(str(html_file))
+        assert "hello" in result, (
+            f"Expected file content in result, got {result!r}"
+        )
+
+
 class TestHtmlContextSanitization:
     def test_html_context_is_sanitized_before_llm(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Verify that the counting client receives sanitized html_context, not raw injection."""

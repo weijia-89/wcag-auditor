@@ -2,6 +2,12 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [0.2.4] - 2026-05-06
+
+### Fixed
+
+- **Round 3's `_read_html_context` CWD guard had zero test coverage.** Every existing test in `test_auditor.py` sets `WCAG_ALLOW_FILE_OUTSIDE_CWD=1`, which bypasses `_reject_if_outside_cwd` before it can do anything. A regression that removed or broke the guard in `_read_html_context` would not have been caught by any test. Added `TestReadHtmlContextCwdGuard` with two cases: an out-of-cwd path (no bypass env var) must return `""`, and an in-cwd path (no bypass env var, `monkeypatch.chdir` to `tmp_path`) must return the file content. Both now pass without `WCAG_ALLOW_FILE_OUTSIDE_CWD`.
+
 ## [0.2.3] - 2026-05-06
 
 ### Fixed
@@ -33,7 +39,7 @@ Five findings from the second health audit (H1-H5) addressed. All closed.
   sequential; wiring in real async concurrency would require rewriting the
   `LLMClientProtocol` interface, which isn't a one-line change. Added the env var and the
   per-batch progress log so the interface exists for a future `asyncio.gather` pass without
-  any caller needing to change. Small investment now, bigger payoff later.
+  any caller needing to change.
 - `tests/unit/test_database.py`: 11 new tests for `save_report`, `list_reports`, `get_report`,
   the `WCAG_DB_PATH` override, and the 0600 chmod (H3). Found that none of the three public
   database functions had any unit coverage at all, which meant a schema migration would have silently broken
