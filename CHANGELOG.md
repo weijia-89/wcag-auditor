@@ -4,40 +4,39 @@ All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.c
 
 ## [0.2.1] - 2026-05-06
 
-Five findings from the second health audit (H1–H5) addressed.
+Five findings from the second health audit (H1-H5) addressed. All closed.
 
 ### Added
 
 - `_sanitize_html_for_prompt` in `llm_client.py` (H2). Found that `html_context[:2000]` was
-  going into Ollama prompts verbatim — a malicious HTML file could slip `System:` or `###`
-  headers past the system prompt. Turned out regex redaction of those line-start patterns was
-  enough to close the practical injection path without mangling normal HTML. Also strips script
+  going into Ollama prompts verbatim, which meant a malicious HTML file could slip `System:` or `###`
+  headers past the system prompt without any resistance. Turned out regex redaction of those line-start patterns was
+  enough to close the practical injection path without mangling normal HTML, which was a relief because the alternative was full HTML parsing. Also strips script
   blocks, model role-tags (`<|system|>`), null bytes, and control characters. Applied in both
   `OllamaClient.generate_fix` and `Auditor.audit` (which now calls the sanitizer on the raw
   file read, not just at the LLM boundary).
 - `WCAG_LLM_BATCH_SIZE` env var in `auditor.py` (H4). The N+1 sequential LLM loop is still
-  sequential — learned that wiring in real async concurrency would require rewriting the
+  sequential; wiring in real async concurrency would require rewriting the
   `LLMClientProtocol` interface, which isn't a one-line change. Added the env var and the
   per-batch progress log so the interface exists for a future `asyncio.gather` pass without
-  any caller needing to change.
-- `tests/unit/test_database.py` — 11 new tests for `save_report`, `list_reports`, `get_report`,
+  any caller needing to change. Small investment now, bigger payoff later.
+- `tests/unit/test_database.py`: 11 new tests for `save_report`, `list_reports`, `get_report`,
   the `WCAG_DB_PATH` override, and the 0600 chmod (H3). Found that none of the three public
-  database functions had any unit coverage; a schema migration would have silently broken
-  persistence in CI.
-- `tests/unit/test_auditor.py` — 10 new tests for `Auditor` orchestration: mock-mode path,
+  database functions had any unit coverage at all, which meant a schema migration would have silently broken
+  persistence in CI without tripping a single assertion.
+- `tests/unit/test_auditor.py`: 10 new tests for `Auditor` orchestration: mock-mode path,
   sidecar loading, LLM failure swallowing, report assembly, batch-size env var, and
   html_context sanitization end-to-end (H3).
-- `tests/unit/test_llm_sanitizer.py` — 16 targeted tests for `_sanitize_html_for_prompt`:
+- `tests/unit/test_llm_sanitizer.py`: 16 targeted tests for `_sanitize_html_for_prompt`:
   script removal, role-header redaction, role-tag removal, control char stripping, truncation,
   and clean passthrough (H2).
-- Ruff lint step added to `.github/workflows/ci.yml` before the test run (H5). Was surprised
-  how many unused imports had accumulated across the test files — 10 fixable violations, all
+- Ruff lint step added to `.github/workflows/ci.yml` before the test run (H5). The number of unused imports that had accumulated across the test files was surprising: 10 fixable violations, all
   auto-corrected.
 
 ### Changed
 
 - `Makefile` `check-regression` target now detects an all-zeros `eval_baseline.json` and
-  prints a clear warning before skipping — rather than running a gate that can never fail
+  prints a clear warning before skipping, rather than running a gate that can never fail
   (H1). The `--ci` flag is also passed so only `schema_compliance_rate` is checked under
   `MOCK_LLM=1`, which is the only metric that means anything without a real Ollama instance.
 

@@ -5,26 +5,26 @@ One Python package, six modules. Each module encapsulates one concern; the inten
 ## Diagram
 
 ```
-       +-----------+
-       |   cli.py  |   Typer commands: audit / history / report
-       +-----+-----+
-             |
-             v
-       +-----+-----+
-       | auditor.py|   Auditor class: orchestrates the run
-       +--+--+--+--+
-          |  |  |
-   +------+  |  +-------------+
-   |         |                |
-   v         v                v
+ +-----------+
+ | cli.py | Typer commands: audit / history / report
+ +-----+-----+
+ |
+ v
+ +-----+-----+
+ | auditor.py| Auditor class: orchestrates the run
+ +--+--+--+--+
+ | | |
+ +------+ | +-------------+
+ | | |
+ v v v
 +--+----+ +--+--------+ +-----+-----+
-| axe_  | | llm_      | | database  |
-| runner| | client    | | (sqlite)  |
+| axe_ | | llm_ | | database |
+| runner| | client | | (sqlite) |
 +-------+ +-----------+ +-----------+
-   |
-   v
+ |
+ v
 +--+----+
-|models |   Pydantic shapes shared by everything
+|models | Pydantic shapes shared by everything
 +-------+
 
 eval_metrics.py: sits beside auditor; consumes AuditResult/AuditReport.
@@ -95,14 +95,14 @@ Trade-off: Rich tables aren't machine-readable; that's why `--output json` exist
 
 ```
 target (str) -> Auditor.audit
-    -> [mock]  Auditor._get_violations_mock -> run_axe_from_json
-    -> [real]  Auditor._get_violations_real -> Playwright.launch
-                                            -> run_axe -> axe.run -> _parse_violations
-    -> for each ViolationInput:
-           LLMClientProtocol.generate_fix -> AuditResult
-    -> AuditReport.from_results
-    -> save_report (optional)
-    -> Rich table or JSON
+ -> [mock] Auditor._get_violations_mock -> run_axe_from_json
+ -> [real] Auditor._get_violations_real -> Playwright.launch
+ -> run_axe -> axe.run -> _parse_violations
+ -> for each ViolationInput:
+ LLMClientProtocol.generate_fix -> AuditResult
+ -> AuditReport.from_results
+ -> save_report (optional)
+ -> Rich table or JSON
 ```
 
 ## Build system
