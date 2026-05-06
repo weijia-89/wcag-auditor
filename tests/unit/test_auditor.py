@@ -1,7 +1,7 @@
 """Unit tests for auditor.py core orchestration logic.
 
 Covers:
-- mock-mode path (MOCK_LLM=1 with and without a sidecar)
+- mock-mode path (WCAG_MOCK_AXE=1 with and without a sidecar)
 - LLM failure swallowing: one bad violation should not abort the run
 - report assembly: correct violation counts, impact tallying
 - batch-size env var: parses and logs without crashing
@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from wcag_auditor.auditor import Auditor
-from wcag_auditor.llm_client import MockClient
+from wcag_auditor.llm_client import RuleEngine
 from wcag_auditor.models import AuditResult, ImpactLevel, ViolationInput
 
 
@@ -59,11 +59,11 @@ class _AlwaysFailClient:
 
 
 class _CountingClient:
-    """Records how many times generate_fix was called, then delegates to MockClient."""
+    """Records how many times generate_fix was called, then delegates to RuleEngine."""
 
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
-        self._mock = MockClient()
+        self._mock = RuleEngine()
 
     def generate_fix(self, violation: ViolationInput, html_context: str, file_path: str) -> AuditResult:
         self.calls.append((violation.id, html_context))
@@ -76,18 +76,18 @@ class _CountingClient:
 
 class TestMockModePath:
     def test_empty_report_when_no_sidecar(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(tmp_path / "nonexistent.html"), save=False)
 
         assert report.total_violations == 0
         assert report.results == []
 
     def test_sidecar_violations_flow_through(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
@@ -100,14 +100,14 @@ class TestMockModePath:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.total_violations == 1
         assert report.results[0].rule_id == "image-alt"
 
     def test_multiple_sidecar_violations(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
@@ -126,7 +126,7 @@ class TestMockModePath:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.total_violations == 3
@@ -139,7 +139,7 @@ class TestMockModePath:
 class TestLlmFailureSwallow:
     def test_failed_violation_is_dropped_not_aborted(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """If every LLM call fails, the report should have 0 results, not raise."""
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
@@ -160,7 +160,7 @@ class TestLlmFailureSwallow:
 
     def test_partial_failure_keeps_successful_results(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """First violation fails; second should still make it into the report."""
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
@@ -179,7 +179,7 @@ class TestLlmFailureSwallow:
         )
 
         call_count = [0]
-        mock = MockClient()
+        mock = RuleEngine()
 
         class _FirstFailClient:
             def generate_fix(self, violation: ViolationInput, html_context: str, file_path: str) -> AuditResult:
@@ -200,14 +200,14 @@ class TestLlmFailureSwallow:
 
 class TestReportAssembly:
     def test_impact_counts_are_tallied(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
         html_file = tmp_path / "page.html"
         html_file.write_text("<html></html>", encoding="utf-8")
 
-        # Two violations — mock client sets them both to CRITICAL via MockClient defaults.
+        # Two violations — RuleEngine preserves the violation's impact level.
         sidecar = tmp_path / "page.axe.json"
         sidecar.write_text(
             json.dumps(
@@ -219,21 +219,21 @@ class TestReportAssembly:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.scanned_path == str(html_file)
         assert report.total_violations == 2
 
     def test_scanned_path_in_report(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
         html_file = tmp_path / "mypage.html"
         html_file.write_text("<html></html>", encoding="utf-8")
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.scanned_path == str(html_file)
@@ -245,7 +245,7 @@ class TestReportAssembly:
 
 class TestBatchSizeEnvVar:
     def test_batch_size_zero_does_not_crash(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
         monkeypatch.setenv("WCAG_LLM_BATCH_SIZE", "0")
@@ -253,12 +253,12 @@ class TestBatchSizeEnvVar:
         html_file = tmp_path / "page.html"
         html_file.write_text("<html></html>", encoding="utf-8")
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
         assert report is not None
 
     def test_batch_size_positive_does_not_crash(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
         monkeypatch.setenv("WCAG_LLM_BATCH_SIZE", "5")
@@ -272,7 +272,7 @@ class TestBatchSizeEnvVar:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=MockClient())
+        auditor = Auditor(llm_client=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
         assert report.total_violations == 1
 
@@ -327,7 +327,7 @@ class TestReadHtmlContextCwdGuard:
 class TestHtmlContextSanitization:
     def test_html_context_is_sanitized_before_llm(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         """Verify that the counting client receives sanitized html_context, not raw injection."""
-        monkeypatch.setenv("MOCK_LLM", "1")
+        monkeypatch.setenv("WCAG_MOCK_AXE", "1")
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 

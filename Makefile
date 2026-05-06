@@ -13,7 +13,7 @@ download-axe:
 	uv run python scripts/download_axe.py
 
 eval:
-	MOCK_LLM=1 uv run pytest tests/eval/ -v \
+	WCAG_MOCK_AXE=1 uv run pytest tests/eval/ -v \
 	  --json-report --json-report-file=eval_results.json \
 	  -k "not test_fix_accuracy and not test_hallucination and not test_criterion_accuracy"
 

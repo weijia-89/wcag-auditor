@@ -10,7 +10,7 @@ from wcag_auditor.models import (
     ImpactLevel,
     ViolationInput,
 )
-from wcag_auditor.llm_client import MockClient
+from wcag_auditor.llm_client import RuleEngine
 from wcag_auditor.eval_metrics import (
     SchemaComplianceMetric,
 )
@@ -45,8 +45,8 @@ _warn_if_baseline_all_zeros()
 # ---------------------------------------------------------------------------
 
 def _make_result_from_violation(violation: ViolationInput, file_path: str) -> AuditResult:
-    """Use MockClient to generate a deterministic AuditResult from a ViolationInput."""
-    client = MockClient()
+    """Generate a deterministic AuditResult from a ViolationInput using RuleEngine."""
+    client = RuleEngine()
     return client.generate_fix(violation, html_context="", file_path=file_path)
 
 
@@ -209,13 +209,13 @@ class TestBaselineMetricsFile:
 class TestApplicationContract:
     """Contract tests for the audit pipeline.
 
-    Schema compliance tests run with MOCK_LLM=1 and must pass Day 1.
+    Schema compliance tests run with WCAG_MOCK_AXE=1 and must pass Day 1.
     LLM-quality tests (criterion accuracy, hallucination, fix applicability)
     are xfail until Sessions 2-4 implement the full eval loop.
     """
 
     def _generate_mock_results(self, golden_dataset: list[dict], project_root: Path) -> list[AuditResult]:
-        """Use MockClient to generate AuditResult for each expected violation in the dataset."""
+        """Use RuleEngine to generate AuditResult for each expected violation in the dataset."""
         results = []
         for record in golden_dataset:
             for expected_v in record["axe_expected_violations"]:
@@ -230,7 +230,7 @@ class TestApplicationContract:
     def test_schema_compliance_mock_mode(
         self, golden_dataset: list[dict], project_root: Path
     ) -> None:
-        """MockClient output must be 100% schema-compliant. Runs in CI (MOCK_LLM=1)."""
+        """RuleEngine output must be 100% schema-compliant. Runs in CI (WCAG_MOCK_AXE=1)."""
         results = self._generate_mock_results(golden_dataset, project_root)
         assert len(results) > 0, "Expected at least one result from golden dataset"
 
@@ -242,24 +242,24 @@ class TestApplicationContract:
             f"Score: {metric_result.score:.2f}"
         )
         assert metric_result.score == 1.0, (
-            f"MockClient must achieve 100% schema compliance, got {metric_result.score:.2f}"
+            f"RuleEngine must achieve 100% schema compliance, got {metric_result.score:.2f}"
         )
 
     def test_mock_results_have_non_empty_fixes(
         self, golden_dataset: list[dict], project_root: Path
     ) -> None:
-        """MockClient must generate at least one fix per violation."""
+        """RuleEngine must generate at least one fix per violation."""
         results = self._generate_mock_results(golden_dataset, project_root)
 
         for result in results:
             assert len(result.fixes) >= 1, (
-                f"rule_id={result.rule_id}: MockClient returned no fixes"
+                f"rule_id={result.rule_id}: RuleEngine returned no fixes"
             )
 
     def test_mock_results_confidence_in_range(
         self, golden_dataset: list[dict], project_root: Path
     ) -> None:
-        """MockClient confidence scores must be in [0, 1]."""
+        """RuleEngine confidence scores must be in [0, 1]."""
         results = self._generate_mock_results(golden_dataset, project_root)
 
         for result in results:
@@ -270,7 +270,7 @@ class TestApplicationContract:
     def test_mock_results_wcag_criterion_non_empty(
         self, golden_dataset: list[dict], project_root: Path
     ) -> None:
-        """MockClient must populate wcag_criterion (may be 'unknown' but not empty)."""
+        """RuleEngine must populate wcag_criterion (may be 'unknown' but not empty)."""
         results = self._generate_mock_results(golden_dataset, project_root)
 
         for result in results:
@@ -287,7 +287,7 @@ class TestApplicationContract:
     ) -> None:
         """Real LLM criterion accuracy must meet threshold. Requires make eval-full."""
         if mock_llm_active:
-            pytest.skip("MOCK_LLM=1 — skipping real LLM criterion accuracy test")
+            pytest.skip("WCAG_MOCK_AXE=1 — skipping real LLM criterion accuracy test")
 
         # This test requires a running Ollama instance and will be implemented in Session 2.
         pytest.fail("Not yet implemented — complete in Session 2")
@@ -301,7 +301,7 @@ class TestApplicationContract:
     ) -> None:
         """Real LLM hallucination rate must meet threshold. Requires make eval-full."""
         if mock_llm_active:
-            pytest.skip("MOCK_LLM=1 — skipping real LLM hallucination test")
+            pytest.skip("WCAG_MOCK_AXE=1 — skipping real LLM hallucination test")
 
         pytest.fail("Not yet implemented — complete in Session 3")
 
@@ -314,6 +314,6 @@ class TestApplicationContract:
     ) -> None:
         """Real LLM fix applicability must meet threshold. Requires make eval-full."""
         if mock_llm_active:
-            pytest.skip("MOCK_LLM=1 — skipping fix applicability test")
+            pytest.skip("WCAG_MOCK_AXE=1 — skipping fix applicability test")
 
         pytest.fail("Not yet implemented — complete in Session 4")

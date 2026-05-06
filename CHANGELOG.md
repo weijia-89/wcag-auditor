@@ -2,6 +2,12 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [0.3.0] - 2026-05-06
+
+### Changed
+
+- **Removed the Ollama/LLM layer.** `OllamaClient`, `_SYSTEM_PROMPT`, `_FIX_SCHEMA`, `_MAX_LLM_BYTES`, `_ROLE_HEADER_RE`, `_SCRIPT_TAG_RE`, `_ROLE_TAG_RE`, and the `ollama>=0.2` dependency have been deleted. `MockClient` is renamed `RuleEngine` and is now the sole implementation. `get_client()` always returns `RuleEngine()`. `_sanitize_html_for_prompt` is preserved (still imported by `auditor.py` for HTML context sanitization). Renamed `MOCK_LLM` → `WCAG_MOCK_AXE` in `auditor.py` to clarify that the env var controls Playwright mode, not a mock LLM. Updated all test files accordingly.
+
 ## [0.2.4] - 2026-05-06
 
 ### Fixed

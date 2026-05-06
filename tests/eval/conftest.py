@@ -25,8 +25,8 @@ def golden_dataset() -> list[dict]:
 
 @pytest.fixture(scope="session")
 def mock_llm_active() -> bool:
-    """True when MOCK_LLM=1 is set in the environment."""
-    return os.environ.get("MOCK_LLM") == "1"
+    """True when WCAG_MOCK_AXE=1 is set in the environment."""
+    return os.environ.get("WCAG_MOCK_AXE") == "1"
 
 
 @pytest.fixture(scope="session")

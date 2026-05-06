@@ -52,7 +52,7 @@ class Auditor:
 
     Pass a custom ``llm_client`` to swap the LLM (for tests, alternate
     backends, or canary runs). The default falls through to ``get_client()``
-    which honours the ``MOCK_LLM=1`` env var.
+    which honours the ``WCAG_MOCK_AXE=1`` env var.
     """
 
     def __init__(
@@ -66,11 +66,11 @@ class Auditor:
     def audit(self, path_or_url: str, save: bool = True) -> AuditReport:
         """Run a full audit on a file or URL and return the report.
 
-        When MOCK_LLM=1 is set we skip Playwright entirely and look for a
+        When WCAG_MOCK_AXE=1 is set we skip Playwright entirely and look for a
         ``.axe.json`` sidecar next to the input. Missing sidecar in mock mode
         means an empty report (no errors); useful for the CI smoke path.
         """
-        mock_mode = os.environ.get("MOCK_LLM") == "1"
+        mock_mode = os.environ.get("WCAG_MOCK_AXE") == "1"
 
         rprint(f"[bold blue]Auditing:[/bold blue] {path_or_url}", file=sys.stderr)
 
@@ -121,17 +121,17 @@ class Auditor:
     def _get_violations_mock(self, path_or_url: str) -> list[ViolationInput]:
         sidecar = _find_axe_sidecar(path_or_url)
         if sidecar:
-            rprint(f"[dim]  (MOCK_LLM=1) Loading axe sidecar: {sidecar}[/dim]", file=sys.stderr)
+            rprint(f"[dim]  (WCAG_MOCK_AXE=1) Loading axe sidecar: {sidecar}[/dim]", file=sys.stderr)
             return run_axe_from_json(sidecar)
         rprint(
-            "[dim]  (MOCK_LLM=1) No .axe.json sidecar found; returning empty violations[/dim]",
+            "[dim]  (WCAG_MOCK_AXE=1) No .axe.json sidecar found; returning empty violations[/dim]",
             file=sys.stderr,
         )
         return []
 
     def _get_violations_real(self, path_or_url: str) -> list[ViolationInput]:
         # Local import: keeps the test suite from paying Playwright's import
-        # cost, and lets MOCK_LLM=1 work on machines that don't have the
+        # cost, and lets WCAG_MOCK_AXE=1 work on machines that don't have the
         # browser binary installed at all.
         from playwright.sync_api import sync_playwright
 
