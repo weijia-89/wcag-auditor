@@ -2,6 +2,12 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [0.2.3] - 2026-05-06
+
+### Fixed
+
+- **`_read_html_context` bypassed the CWD confinement guard.** `auditor.py` reads the first 3 KB of a local file to give the LLM context about the HTML being audited. That read happened before `run_axe` was called and before `_reject_if_outside_cwd` ran. A path like `../../etc/passwd` or `../../.env` would cause Playwright to refuse the `file://` URL, but the file content would already have been read into memory and embedded in the LLM prompt. Playwright blocking the browser and the LLM receiving the file are two different enforcement points, and only one of them was wired. Added `_reject_if_outside_cwd(abs_path)` inside `_read_html_context`, caught under `(OSError, ValueError)` so a path outside cwd just returns an empty string the same way an unreadable file does. Imported `_reject_if_outside_cwd` from `axe_runner` where it was already defined and tested.
+
 ## [0.2.2] - 2026-05-06
 
 ### Fixed

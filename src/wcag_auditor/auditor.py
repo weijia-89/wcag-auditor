@@ -6,7 +6,7 @@ from pathlib import Path
 
 from rich import print as rprint
 
-from wcag_auditor.axe_runner import run_axe, run_axe_from_json
+from wcag_auditor.axe_runner import _reject_if_outside_cwd, run_axe, run_axe_from_json
 from wcag_auditor.database import save_report
 from wcag_auditor.llm_client import LLMClientProtocol, _sanitize_html_for_prompt, get_client
 from wcag_auditor.models import AuditReport, AuditResult, ViolationInput
@@ -24,12 +24,19 @@ def _is_url(path_or_url: str) -> bool:
 
 
 def _read_html_context(path_or_url: str) -> str:
-    """First 3KB of the file, or empty string for URLs / unreadable files."""
+    """First 3KB of the file, or empty string for URLs / unreadable files.
+
+    Path must resolve inside cwd (same guard as axe_runner._path_to_url).
+    Prevents reading arbitrary local files into the LLM prompt even when
+    Playwright itself rejects the path.
+    """
     if _is_url(path_or_url):
         return ""
     try:
-        return Path(path_or_url).read_text(encoding="utf-8", errors="replace")[:3000]
-    except OSError:
+        abs_path = Path(path_or_url).resolve()
+        _reject_if_outside_cwd(abs_path)
+        return abs_path.read_text(encoding="utf-8", errors="replace")[:3000]
+    except (OSError, ValueError):
         return ""
 
 
