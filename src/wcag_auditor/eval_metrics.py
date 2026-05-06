@@ -197,6 +197,7 @@ class FixApplicabilityMetric:
             suffix=".html",
             delete=False,
             encoding="utf-8",
+            dir=Path.cwd(),
         ) as f:
             f.write(patched_html)
             temp_path = f.name

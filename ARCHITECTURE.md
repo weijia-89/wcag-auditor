@@ -1,6 +1,6 @@
 # Architecture
 
-One Python package, six modules. Each module encapsulates one concern; the intent is that swapping an implementation means editing one file.
+One Python package, six modules. Each module encapsulates one concern, and the intent is that swapping an implementation means editing one file, one file, not hunting through a call graph trying to figure out how many places assumed something about the old implementation. That's it. No magic, no framework.
 
 ## Diagram
 
@@ -8,24 +8,24 @@ One Python package, six modules. Each module encapsulates one concern; the inten
  +-----------+
  | cli.py | Typer commands: audit / history / report
  +-----+-----+
- |
- v
+       |
+       v
  +-----+-----+
  | auditor.py| Auditor class: orchestrates the run
  +--+--+--+--+
- | | |
- +------+ | +-------------+
- | | |
- v v v
+    |  |  |
+ +--+  |  +-------------+
+ |     |                |
+ v     v                v
 +--+----+ +--+--------+ +-----+-----+
-| axe_ | | llm_ | | database |
-| runner| | client | | (sqlite) |
+| axe_  | | llm_      | | database  |
+| runner| | client    | | (sqlite)  |
 +-------+ +-----------+ +-----------+
- |
- v
-+--+----+
-|models | Pydantic shapes shared by everything
-+-------+
+              |
+              v
+         +--+----+
+         |models | Pydantic shapes shared by everything
+         +-------+
 
 eval_metrics.py: sits beside auditor; consumes AuditResult/AuditReport.
 scripts/check_regression.py: CI gate, reads pytest-json-report output.
@@ -43,17 +43,17 @@ Hides: how axe-core runs against a page, and how a URL/path becomes a target.
 - `_check_http_url_safe` is the SSRF guard (B11).
 - `_extract_wcag_criterion` parses axe tags `wcag111` -> `1.1.1`.
 
-Trade-off: axe is bundled, not loaded from CDN. Works on file:// pages; means we ship a 500KB JS file. We chose ship-it over runtime fragility.
+Trade-off: axe is bundled, not loaded from CDN. Works on file:// pages without network access. It does mean we ship a 500KB JS file in the wheel, but we chose that over runtime fragility, a CDN fetch that fails at 2am when someone is trying to debug an accessibility regression before a deadline is worse than a slightly larger package, and the SHA-pin in `download_axe.py` means you know exactly what version of axe you have.
 
 ### `auditor`
 
 Hides: the orchestration order. Browser launch lives here (not in `axe_runner`) so a mock-only run never imports Playwright.
 
 - One browser per `audit()` call. Cheap enough; safer than sharing.
-- LLM failures on a single violation log and continue. Total result count drops, signals trouble without aborting.
+- LLM failures on a single violation log and continue. Total result count drops, which signals trouble without aborting the entire run.
 - `MOCK_LLM=1` short-circuits Playwright entirely and reads a `.axe.json` sidecar if present.
 
-Trade-off: per-violation LLM call (no batching). Slower for noisy pages, lets each fix retry independently.
+Trade-off: per-violation LLM call (no batching). Slower for noisy pages. Lets each fix retry independently, which is worth it.
 
 ### `llm_client`
 
@@ -63,17 +63,17 @@ Hides: the LLM provider. `LLMClientProtocol` is the seam. Swap in a different ba
 - `MockClient` is deterministic, prefixes `[MOCK]` on explanation.
 - 64KB cap on response bytes before parse (B5).
 
-Trade-off: structured-output via the `format=` schema. Locks us to Ollama's JSON-schema support; that's fine for now.
+Trade-off: structured-output via the `format=` schema. Locks us to Ollama's JSON-schema support; that's fine for now, and we can revisit if a better provider appears.
 
 ### `database`
 
-Hides: persistence shape. Today SQLite via sqlite-utils. If we ever want Postgres, only this module changes.
+Hides: persistence shape. Today SQLite via sqlite-utils. If we ever want Postgres, only this module changes. Nothing else needs to know.
 
 - WAL mode + 0600 permissions enforced on every open.
 - `WCAG_DB_PATH` env override.
 - One table, one row per audit, full report stored as JSON in `report_json`.
 
-Trade-off: storing JSON blobs is denormalised. We get reads-by-id for free and don't pay for relational ergonomics we don't use.
+Trade-off: storing JSON blobs is denormalised. Fine. We get reads-by-id for free and don't pay for relational ergonomics we don't use, so the tradeoff is straightforward, if you never join the reports table to anything, normalising it costs more than it buys.
 
 ### `eval_metrics`
 
@@ -83,11 +83,11 @@ Hides: how good is good? Six metrics:
 - 1 Playwright-based: fix_applicability. Apply the fix, re-run axe, check the violation is gone.
 - (false_negative is the inverse view of fix_applicability against a known-bad fixture set.)
 
-Trade-off: hallucination metric is structural, not LLM-as-judge. Cheap, zero non-determinism, narrower coverage. We accept the narrower view because LLM-as-judge in CI is a recipe for flaky gates.
+Trade-off: hallucination metric is structural, not LLM-as-judge. Cheap and zero non-determinism, though the coverage is narrower. We accept the narrower view because LLM-as-judge in CI is a recipe for flaky gates. No exceptions.
 
 ### `cli`
 
-Hides: how the user invokes the thing. Typer + Rich. No business logic past argument parsing and output rendering.
+Hides: how the user invokes the thing. Typer + Rich. No business logic past argument parsing and output rendering. Keep it that way.
 
 Trade-off: Rich tables aren't machine-readable; that's why `--output json` exists.
 
@@ -95,19 +95,19 @@ Trade-off: Rich tables aren't machine-readable; that's why `--output json` exist
 
 ```
 target (str) -> Auditor.audit
- -> [mock] Auditor._get_violations_mock -> run_axe_from_json
- -> [real] Auditor._get_violations_real -> Playwright.launch
- -> run_axe -> axe.run -> _parse_violations
- -> for each ViolationInput:
- LLMClientProtocol.generate_fix -> AuditResult
- -> AuditReport.from_results
- -> save_report (optional)
- -> Rich table or JSON
+  -> [mock] Auditor._get_violations_mock -> run_axe_from_json
+  -> [real] Auditor._get_violations_real -> Playwright.launch
+                                         -> run_axe -> axe.run -> _parse_violations
+  -> for each ViolationInput:
+       LLMClientProtocol.generate_fix -> AuditResult
+  -> AuditReport.from_results
+  -> save_report (optional)
+  -> Rich table or JSON
 ```
 
 ## Build system
 
-`pyproject.toml` uses hatchling as the build backend. The wheel package root is `src/wcag_auditor`. `[tool.pytest.ini_options]` sets `pythonpath = ["src"]` so tests import directly from the source tree without an editable install.
+`pyproject.toml` uses hatchling as the build backend, and the wheel package root is `src/wcag_auditor`. `[tool.pytest.ini_options]` sets `pythonpath = ["src"]` so tests import directly from the source tree without an editable install, which keeps CI setup simpler than it would otherwise be.
 
 ## CI
 
@@ -118,11 +118,13 @@ target (str) -> Auditor.audit
 - Test step: `uv run pytest tests/unit/ -v`. Unit tests use `MockClient` and recorded axe output; no Playwright binary or live Ollama needed in CI.
 - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is set at the workflow level.
 
-The full eval (`make eval-full`) is not in CI because it requires a running Ollama server and a Playwright-installed Chromium. Run it locally before tagging a release.
+The full eval (`make eval-full`) is not in CI because it requires a running Ollama server and a Playwright-installed Chromium. Run it locally before tagging a release. Don't skip this step.
 
 ## What we deliberately did not do
 
-- No async. The sync Playwright API is intentional. One browser, one page, one violation list, in order.
-- No plugin system for LLM providers. The Protocol is enough; users write a class.
+Explicit choices, not oversights.
+
+- No async. The sync Playwright API is intentional, one browser, one page, one violation list, in order, with predictable teardown. Async would complicate error handling for marginal throughput gain on a tool that isn't bottlenecked on network I/O.
+- No plugin system for LLM providers. The Protocol is enough; users write a class and pass it in.
 - No streaming. axe finishes, we ask LLM, we render. Streaming added complexity for negligible UX gain on a tool this fast.
 - No batching across violations. See trade-off above.

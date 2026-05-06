@@ -1,6 +1,6 @@
 # Security
 
-This is a local CLI that pulls user-supplied URLs/files into a headless browser and pipes results through a local LLM. The interesting attack surface is small but real.
+This is a local CLI that pulls user-supplied URLs and files into a headless Chromium instance, injects axe-core, and pipes the violation list through a local LLM. Small attack surface. But real, and worth mapping explicitly before you point this at anything sensitive or run it in an environment where "headless browser with DOM execution" sounds alarming, because it should sound a little alarming, and the defaults are designed with that in mind.
 
 ## Reporting
 
@@ -34,18 +34,20 @@ Please don't open public issues for suspected security bugs. Give me 90 days bef
 
 ### What's NOT mitigated
 
-- A user who opts into every override (`WCAG_NO_SANDBOX=1`, `WCAG_ALLOW_FILE_OUTSIDE_CWD=1`, `WCAG_ALLOW_PRIVATE_NET=1`) is on their own. The flags exist for a reason; the defaults exist for a bigger reason.
-- The local LLM model itself is trusted. If you run a tampered Ollama model, fix suggestions can recommend bad HTML. Schema validation will still reject malformed shapes.
-- DNS rebinding against a public hostname that resolves to a private IP. We do not re-validate post-resolution. Mitigation: don't `WCAG_ALLOW_PRIVATE_NET=1` on machines that audit untrusted URLs.
+A user who opts into every override at once (`WCAG_NO_SANDBOX=1`, `WCAG_ALLOW_FILE_OUTSIDE_CWD=1`, `WCAG_ALLOW_PRIVATE_NET=1`) is on their own. Each flag exists for a legitimate reason, Docker needs no-sandbox, tests need file access outside cwd, staging audits need private net. But combining all three against untrusted input in a single session is genuinely unsafe, and the README doesn't warn against it loudly enough.
+
+The local LLM model itself is trusted. If you run a tampered Ollama model, fix suggestions can recommend bad HTML, though schema validation will still reject malformed shapes.
+
+DNS rebinding against a public hostname that resolves to a private IP is not mitigated because we don't re-validate post-resolution. The practical mitigation is simple: don't set `WCAG_ALLOW_PRIVATE_NET=1` on machines that audit untrusted URLs.
 
 ## Env override rationale
 
-These are deliberately separate flags so a CI environment can opt into exactly what it needs.
+Separate flags. Deliberate. A CI environment that needs no-sandbox shouldn't have to also accept private-net access to get there; each flag controls one boundary and only one, so you can enable exactly what your environment requires without dragging in the others.
 
 - **`WCAG_ALLOW_FILE_OUTSIDE_CWD`**: for legitimate `tests/fixtures/...` paths in a sibling repo. Default off so `wcag-auditor audit /etc/...` just fails.
 - **`WCAG_ALLOW_LOCALHOST`**: for `wcag-auditor audit http://localhost:3000` against your own dev server. Default off so a malicious link can't pivot the auditor onto your local-only services.
 - **`WCAG_ALLOW_PRIVATE_NET`**: for scanning internal staging hosts. Default off so the SSRF guard catches the obvious cases. 169.254/16 (cloud metadata) is never allowed regardless.
-- **`WCAG_NO_SANDBOX`**: Docker / CI need it; laptops don't. Default off because Chromium's sandbox is the only thing standing between a malicious page and the host.
+- **`WCAG_NO_SANDBOX`**: Docker / CI need it; laptops don't. Default off because Chromium's sandbox is the only thing standing between a malicious page and the host. That's not a hyperbole.
 
 ## Reproducing the hardening tests
 

@@ -2,6 +2,14 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [0.2.2] - 2026-05-06
+
+### Fixed
+
+- **`_get_db()` ran WAL setup and `chmod` on every call.** Every database operation, `save_report`, `list_reports`, `get_report`, calls `_get_db()`, which was doing `PRAGMA journal_mode=WAL`, `PRAGMA synchronous=NORMAL`, `db_path.chmod(0o600)`, and table creation on every single call. The chmod is the problem: two concurrent processes (the CLI and pytest, say) both starting at the same time will race on the `chmod` syscall. Extracted `_ensure_db_initialized(db_path)`, protected by a module-level `_initialized_paths: set[Path]` set, so the one-time work runs exactly once per path per process. Subsequent `_get_db()` calls skip straight to `sqlite_utils.Database(str(db_path))`.
+
+- **`FixApplicabilityMetric` wrote temp HTML to `/tmp`, which failed the SSRF CWD guard.** The metric patches the input HTML and runs axe on the result, which means the patched file has to be reachable as a `file://` URL from Chromium. `wcag-auditor audit` runs with a CWD confinement guard that rejects local paths outside the working directory. `/tmp/tmpXXXXXX.html` is outside the working directory by definition. Changed `tempfile.NamedTemporaryFile(...)` to pass `dir=Path.cwd()` so the temp file lands where the guard expects it.
+
 ## [0.2.1] - 2026-05-06
 
 Five findings from the second health audit (H1-H5) addressed. All closed.

@@ -10,17 +10,28 @@ from wcag_auditor.models import AuditReport
 
 _DEFAULT_DB_PATH = Path.home() / ".local" / "share" / "wcag-auditor" / "audits.db"
 
+# Tracks which DB paths have already been initialised (WAL, chmod, schema).
+# Avoids re-running chmod on every call, which would race if two processes
+# open the file simultaneously at startup.
+_initialized_paths: set[Path] = set()
+
 
 def _get_db_path() -> Path:
     env_path = os.environ.get("WCAG_DB_PATH")
     return Path(env_path) if env_path else _DEFAULT_DB_PATH
 
 
-def _get_db() -> sqlite_utils.Database:
-    """Open the audits DB, applying WAL + 0600 + table-create on first use."""
-    db_path = _get_db_path()
-    db_path.parent.mkdir(parents=True, exist_ok=True)
+def _ensure_db_initialized(db_path: Path) -> None:
+    """One-time setup: WAL mode, 0600 permissions, schema creation.
 
+    Called once per unique db_path per process. Subsequent _get_db() calls
+    skip this block entirely, so the chmod() syscall happens once rather
+    than on every audit or history read.
+    """
+    if db_path in _initialized_paths:
+        return
+
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite_utils.Database(str(db_path))
 
     # WAL lets the CLI keep its handle open while pytest opens its own. Without
@@ -44,7 +55,14 @@ def _get_db() -> sqlite_utils.Database:
             pk="id",
         )
 
-    return db
+    _initialized_paths.add(db_path)
+
+
+def _get_db() -> sqlite_utils.Database:
+    """Return an open audits DB, running one-time setup on first use."""
+    db_path = _get_db_path()
+    _ensure_db_initialized(db_path)
+    return sqlite_utils.Database(str(db_path))
 
 
 def save_report(report: AuditReport) -> int:
