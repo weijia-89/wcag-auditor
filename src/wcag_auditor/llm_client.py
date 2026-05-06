@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Protocol, runtime_checkable
 
-from wcag_auditor.models import AuditResult, ImpactLevel, ViolationFix, ViolationInput
+from wcag_auditor.models import AuditResult, ViolationFix, ViolationInput
 
 # Regex for lines that look like prompt-injection role headers.
 _ROLE_HEADER_RE = re.compile(
