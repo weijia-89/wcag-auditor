@@ -53,6 +53,12 @@ class TestExtractWcagCriterion:
 
 
 class TestRunAxeFromJson:
+    @pytest.fixture(autouse=True)
+    def _chdir_to_tmp(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_axe_from_json rejects paths outside cwd (path-traversal guard).
+        Tests write fixtures to tmp_path, so chdir there first."""
+        monkeypatch.chdir(tmp_path)
+
     def test_loads_violations_list(self, tmp_path: Path) -> None:
         violations_data = [
             {

@@ -4,7 +4,7 @@ This is a local CLI that pulls user-supplied URLs/files into a headless browser 
 
 ## Reporting
 
-Email: wei_jia@intuit.com
+Report: [GitHub Security Advisory](https://github.com/weijia-89/wcag-auditor/security/advisories/new)
 
 Please don't open public issues for suspected security bugs. Give me 90 days before disclosure.
 

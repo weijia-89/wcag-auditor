@@ -1,6 +1,12 @@
-# wcagAuditor
+# wcag-auditor
 
-Scan an HTML file or URL for WCAG 2.2 violations with axe-core, then ask a local LLM (Ollama) to suggest a fix for each one. Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`.
+[![CI](https://github.com/weijia-89/wcag-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/weijia-89/wcag-auditor/actions/workflows/ci.yml)
+
+The standard WCAG auditing workflow goes: run axe-core, read the violation ID, look up the criterion, figure out what to actually change. This puts a local LLM in the middle of that. Playwright injects axe-core into the page; violations come back as structured objects; each one gets piped through Ollama with enough HTML context to produce a fix suggestion. Pydantic validates the output before it hits your terminal. The HTML stays on your machine. The fixes don't write themselves.
+
+axe-core catches roughly 30–40% of WCAG 2.2 issues. This doesn't change that number. It just makes the 30–40% easier to act on.
+
+Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`.
 
 ## Install
 

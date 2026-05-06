@@ -210,7 +210,9 @@ def run_axe_from_json(json_path: str) -> list[ViolationInput]:
     ``violations`` key. Useful for CI / mock mode where launching a browser
     isn't an option.
     """
-    data = json.loads(Path(json_path).read_text(encoding="utf-8"))
+    abs_path = Path(json_path).resolve()
+    _reject_if_outside_cwd(abs_path)
+    data = json.loads(abs_path.read_text(encoding="utf-8"))
 
     if isinstance(data, list):
         violations_data = data
