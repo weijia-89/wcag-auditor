@@ -10,7 +10,7 @@ from wcag_auditor.models import (
     ImpactLevel,
     ViolationInput,
 )
-from wcag_auditor.llm_client import RuleEngine
+from wcag_auditor.fix_engine import RuleEngine
 from wcag_auditor.eval_metrics import (
     SchemaComplianceMetric,
 )

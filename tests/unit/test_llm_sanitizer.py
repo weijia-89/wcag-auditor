@@ -1,4 +1,4 @@
-"""Unit tests for _sanitize_html_for_prompt in llm_client.py.
+"""Unit tests for _sanitize_html_for_prompt in fix_engine.py.
 
 Covers: script tag removal, role-header redaction, role-tag removal,
 control char stripping, truncation, and clean HTML passthrough.
@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from wcag_auditor.llm_client import _sanitize_html_for_prompt
+from wcag_auditor.fix_engine import _sanitize_html_for_prompt
 
 
 class TestScriptTagRemoval:

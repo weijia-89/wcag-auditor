@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 
 from wcag_auditor.auditor import Auditor
-from wcag_auditor.llm_client import RuleEngine
+from wcag_auditor.fix_engine import RuleEngine
 from wcag_auditor.models import AuditResult, ImpactLevel, ViolationInput
 
 
@@ -80,7 +80,7 @@ class TestMockModePath:
         monkeypatch.setenv("WCAG_DB_PATH", str(tmp_path / "test.db"))
         monkeypatch.setenv("WCAG_ALLOW_FILE_OUTSIDE_CWD", "1")
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(tmp_path / "nonexistent.html"), save=False)
 
         assert report.total_violations == 0
@@ -100,7 +100,7 @@ class TestMockModePath:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.total_violations == 1
@@ -126,7 +126,7 @@ class TestMockModePath:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.total_violations == 3
@@ -152,7 +152,7 @@ class TestLlmFailureSwallow:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=_AlwaysFailClient())  # type: ignore[arg-type]
+        auditor = Auditor(fix_engine=_AlwaysFailClient())  # type: ignore[arg-type]
         # Should not raise.
         report = auditor.audit(str(html_file), save=False)
 
@@ -188,7 +188,7 @@ class TestLlmFailureSwallow:
                     raise RuntimeError("first call fails")
                 return mock.generate_fix(violation, html_context, file_path)
 
-        auditor = Auditor(llm_client=_FirstFailClient())  # type: ignore[arg-type]
+        auditor = Auditor(fix_engine=_FirstFailClient())  # type: ignore[arg-type]
         report = auditor.audit(str(html_file), save=False)
 
         assert report.total_violations == 1, "Second violation should survive when first fails"
@@ -219,7 +219,7 @@ class TestReportAssembly:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.scanned_path == str(html_file)
@@ -233,7 +233,7 @@ class TestReportAssembly:
         html_file = tmp_path / "mypage.html"
         html_file.write_text("<html></html>", encoding="utf-8")
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
 
         assert report.scanned_path == str(html_file)
@@ -253,7 +253,7 @@ class TestBatchSizeEnvVar:
         html_file = tmp_path / "page.html"
         html_file.write_text("<html></html>", encoding="utf-8")
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
         assert report is not None
 
@@ -272,7 +272,7 @@ class TestBatchSizeEnvVar:
             encoding="utf-8",
         )
 
-        auditor = Auditor(llm_client=RuleEngine())
+        auditor = Auditor(fix_engine=RuleEngine())
         report = auditor.audit(str(html_file), save=False)
         assert report.total_violations == 1
 
@@ -346,10 +346,10 @@ class TestHtmlContextSanitization:
         )
 
         counting_client = _CountingClient()
-        auditor = Auditor(llm_client=counting_client)  # type: ignore[arg-type]
+        auditor = Auditor(fix_engine=counting_client)  # type: ignore[arg-type]
         auditor.audit(str(html_file), save=False)
 
-        assert counting_client.calls, "Expected at least one LLM call"
+        assert counting_client.calls, "Expected at least one fix-engine call"
         _, html_ctx = counting_client.calls[0]
 
         assert "<script>" not in html_ctx, "Script tags should be removed"

@@ -1,6 +1,6 @@
 # Architecture
 
-One Python package, six modules. Each module encapsulates one concern, and the intent is that swapping an implementation means editing one file, one file, not hunting through a call graph trying to figure out how many places assumed something about the old implementation. That's it. No magic, no framework.
+One Python package, six modules. Each module encapsulates one concern. Swapping an implementation means editing one file, not hunting through a call graph figuring out how many places assumed something about the old implementation. No magic, no framework.
 
 ## Diagram
 
@@ -43,7 +43,7 @@ Hides: how axe-core runs against a page, and how a URL/path becomes a target.
 - `_check_http_url_safe` is the SSRF guard (B11).
 - `_extract_wcag_criterion` parses axe tags `wcag111` -> `1.1.1`.
 
-Trade-off: axe is bundled, not loaded from CDN. Works on file:// pages without network access. It does mean we ship a 500KB JS file in the wheel, but we chose that over runtime fragility, a CDN fetch that fails at 2am when someone is trying to debug an accessibility regression before a deadline is worse than a slightly larger package, and the SHA-pin in `download_axe.py` means you know exactly what version of axe you have.
+Trade-off: axe is bundled, not loaded from CDN. Works on file:// pages without network access. It does mean we ship a 500KB JS file in the wheel, but a CDN fetch that fails at 2am when someone is debugging a regression before a deadline is worse than a slightly larger package. The SHA-pin in `download_axe.py` means you know exactly which version of axe you have.
 
 ### `auditor`
 
@@ -51,19 +51,17 @@ Hides: the orchestration order. Browser launch lives here (not in `axe_runner`) 
 
 - One browser per `audit()` call. Cheap enough; safer than sharing.
 - LLM failures on a single violation log and continue. Total result count drops, which signals trouble without aborting the entire run.
-- `MOCK_LLM=1` short-circuits Playwright entirely and reads a `.axe.json` sidecar if present.
+- `WCAG_MOCK_AXE=1` short-circuits Playwright entirely and reads a `.axe.json` sidecar if present.
 
-Trade-off: per-violation LLM call (no batching). Slower for noisy pages. Lets each fix retry independently, which is worth it.
+Trade-off: per-violation fix-engine call (no batching). For the in-process `RuleEngine` the cost is microseconds, but the structure is preserved because a future async or LLM-backed engine would want the same per-violation retry seam.
 
-### `llm_client`
+### `fix_engine`
 
-Hides: the LLM provider. `LLMClientProtocol` is the seam. Swap in a different backend without touching `auditor`.
+Hides: the fix-generation strategy. `FixEngineProtocol` is the seam. Swap in a different engine without touching `auditor`. Renamed from `llm_client` in 0.3.1 once the module had stopped containing an LLM client; the old names (`LLMClientProtocol`, `get_client`) survive as BC aliases until 0.4.0.
 
-- `OllamaClient` talks to a local Ollama server. Lazy-imports `ollama` so MOCK_LLM stays clean.
-- `MockClient` is deterministic, prefixes `[MOCK]` on explanation.
-- 64KB cap on response bytes before parse (B5).
+- Contains `RuleEngine`, the sole `FixEngineProtocol` implementation. Deterministic, no external calls. Per-rule fix templates for known axe rule IDs; fallback template handles unknowns. `confidence_score` fixed at 0.95. `_sanitize_html_for_prompt` is a utility function used by `auditor.py`.
 
-Trade-off: structured-output via the `format=` schema. Locks us to Ollama's JSON-schema support; that's fine for now, and we can revisit if a better provider appears.
+Trade-off: deterministic rule templates mean fix quality is bounded by what's in the template set, not by model capability. For a local tool whose primary value is making the axe 30-40% faster to act on, the trade is correct: predictable output, no network, no model variance in CI.
 
 ### `database`
 
@@ -73,7 +71,7 @@ Hides: persistence shape. Today SQLite via sqlite-utils. If we ever want Postgre
 - `WCAG_DB_PATH` env override.
 - One table, one row per audit, full report stored as JSON in `report_json`.
 
-Trade-off: storing JSON blobs is denormalised. Fine. We get reads-by-id for free and don't pay for relational ergonomics we don't use, so the tradeoff is straightforward, if you never join the reports table to anything, normalising it costs more than it buys.
+Trade-off: storing JSON blobs is denormalised. We get reads-by-id for free and don't pay for relational ergonomics we don't use. If you never join the reports table to anything, normalising it costs more than it buys.
 
 ### `eval_metrics`
 
@@ -83,7 +81,7 @@ Hides: how good is good? Six metrics:
 - 1 Playwright-based: fix_applicability. Apply the fix, re-run axe, check the violation is gone.
 - (false_negative is the inverse view of fix_applicability against a known-bad fixture set.)
 
-Trade-off: hallucination metric is structural, not LLM-as-judge. Cheap and zero non-determinism, though the coverage is narrower. We accept the narrower view because LLM-as-judge in CI is a recipe for flaky gates. No exceptions.
+Trade-off: hallucination metric is structural, not LLM-as-judge. Cheap and zero non-determinism, though the coverage is narrower. LLM-as-judge in CI is a recipe for flaky gates, and flaky gates are worse than no gates.
 
 ### `cli`
 
@@ -115,10 +113,10 @@ target (str) -> Auditor.audit
 
 - Runner: `ubuntu-latest`, Python 3.11 via `astral-sh/setup-uv@v4`.
 - Install: `uv sync --all-groups` (pulls dev group: pytest, ruff, etc.).
-- Test step: `uv run pytest tests/unit/ -v`. Unit tests use `MockClient` and recorded axe output; no Playwright binary or live Ollama needed in CI.
+- Test step: `uv run pytest tests/unit/ -v`. Unit tests use `RuleEngine` and recorded axe output; no Playwright binary and no model server needed in CI.
 - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is set at the workflow level.
 
-The full eval (`make eval-full`) is not in CI because it requires a running Ollama server and a Playwright-installed Chromium. Run it locally before tagging a release. Don't skip this step.
+The full eval (`make eval-full`) is not in CI because it requires a Playwright-installed Chromium. Run it locally before tagging a release. Don't skip this step.
 
 ## What we deliberately did not do
 

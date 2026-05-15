@@ -2,6 +2,15 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [0.3.1] - 2026-05-15
+
+### Changed
+
+- **Renamed `src/wcag_auditor/llm_client.py` to `src/wcag_auditor/fix_engine.py`.** The module hasn't held an LLM client since 0.3.0; the old name was misleading. `LLMClientProtocol` is now `FixEngineProtocol`, `get_client(model="llama3.1:8b")` is now `get_engine()` (with the `model` argument dropped — it had been ignored since 0.3.0). The `Auditor` class now takes a `fix_engine=` keyword argument; the legacy `llm_client=` kwarg is accepted as a BC alias and is slated for removal in 0.4.0. Old top-level symbols (`LLMClientProtocol`, `get_client`) survive as aliases at the bottom of `fix_engine.py` for the same window.
+- **Updated all consumers**: `src/wcag_auditor/auditor.py` (import + attribute name `self._llm` → `self._engine`), `tests/unit/test_fix_engine.py` (renamed from `test_llm_client.py`), `tests/unit/test_auditor.py` (10 call sites), `tests/unit/test_llm_sanitizer.py` (import only), `tests/eval/test_baseline.py` (import), `ARCHITECTURE.md`, `CLAUDE.md`, `ROADMAP.md`.
+- **Stripped remaining Ollama references** from `README.md` (install section, troubleshooting `Connection refused`, Non-goals "Ollama is the only LLM backend"), `CLAUDE.md` (stack table, file map, make-target descriptions, CI vs local eval table), `Makefile` (install echo, eval-full echo, check-regression warning), `SECURITY.md` (threat model line and trusted-model paragraph), and `eval_baseline.json` (`_ci_note` env var rename).
+- **Bumped pyproject + api versions** from `0.1.0` (stale) to `0.3.1`.
+
 ## [0.3.0] - 2026-05-06
 
 ### Changed
@@ -36,8 +45,7 @@ Five findings from the second health audit (H1-H5) addressed. All closed.
 
 - `_sanitize_html_for_prompt` in `llm_client.py` (H2). Found that `html_context[:2000]` was
   going into Ollama prompts verbatim, which meant a malicious HTML file could slip `System:` or `###`
-  headers past the system prompt without any resistance. Turned out regex redaction of those line-start patterns was
-  enough to close the practical injection path without mangling normal HTML, which was a relief because the alternative was full HTML parsing. Also strips script
+  headers past the system prompt without any resistance. Regex redaction of those line-start patterns closes the practical injection path without mangling normal HTML; full HTML parsing wasn't needed. Also strips script
   blocks, model role-tags (`<|system|>`), null bytes, and control characters. Applied in both
   `OllamaClient.generate_fix` and `Auditor.audit` (which now calls the sanitizer on the raw
   file read, not just at the LLM boundary).
@@ -56,8 +64,7 @@ Five findings from the second health audit (H1-H5) addressed. All closed.
 - `tests/unit/test_llm_sanitizer.py`: 16 targeted tests for `_sanitize_html_for_prompt`:
   script removal, role-header redaction, role-tag removal, control char stripping, truncation,
   and clean passthrough (H2).
-- Ruff lint step added to `.github/workflows/ci.yml` before the test run (H5). The number of unused imports that had accumulated across the test files was surprising: 10 fixable violations, all
-  auto-corrected.
+- Ruff lint step added to `.github/workflows/ci.yml` before the test run (H5). Found 10 unused import violations across the test files; all auto-corrected.
 
 ### Changed
 
@@ -103,7 +110,8 @@ Initial scaffold.
 ### Added
 
 - `Auditor` class orchestrating Playwright + axe-core + LLM fix generation.
-- `OllamaClient`, `MockClient`, `LLMClientProtocol`, `get_client()`.
+- `Ol1]: https://github.com/weijia-89/wcag-auditor/compare/v0.3.0...v0.3.1
+[0.3.lamaClient`, `MockClient`, `LLMClientProtocol`, `get_client()`.
 - Pydantic models: `ImpactLevel`, `ViolationInput`, `ViolationFix`, `AuditResult`, `AuditReport`.
 - Typer CLI: `audit`, `history`, `report`.
 - SQLite history via sqlite-utils, WAL mode.
@@ -112,6 +120,10 @@ Initial scaffold.
 - 6 curated HTML fixtures covering image-alt, label, button-name, link-name, color-contrast, html-has-lang.
 - Golden dataset for eval (positive + negative criteria lists).
 
-[0.2.1]: https://example.com/wcag-auditor/compare/0.2.0...0.2.1
-[0.2.0]: https://example.com/wcag-auditor/compare/0.1.0...0.2.0
-[0.1.0]: https://example.com/wcag-auditor/releases/tag/0.1.0
+[0.3.0]: https://github.com/weijia-89/wcag-auditor/compare/v0.2.4...v0.3.0
+[0.2.4]: https://github.com/weijia-89/wcag-auditor/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/weijia-89/wcag-auditor/compare/v0.2.2...v0.2.3
+[0.2.2]: https://github.com/weijia-89/wcag-auditor/compare/v0.2.1...v0.2.2
+[0.2.1]: https://github.com/weijia-89/wcag-auditor/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/weijia-89/wcag-auditor/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/weijia-89/wcag-auditor/releases/tag/v0.1.0

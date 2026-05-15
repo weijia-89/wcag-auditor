@@ -8,7 +8,7 @@
 | Package manager | uv |
 | Browser automation | Playwright (sync API, Chromium) |
 | Accessibility engine | axe-core (bundled, no CDN) |
-| LLM backend | Ollama (local, llama3.1:8b default) |
+| Fix engine | Deterministic per-rule templates (`RuleEngine`). 0.2.x ran Ollama; removed in 0.3.0. |
 | Data validation | Pydantic v2 |
 | CLI | Typer + Rich |
 | Database | SQLite via sqlite-utils, WAL mode |
@@ -20,7 +20,7 @@
 src/wcag_auditor/
   __init__.py          empty
   models.py            Pydantic: ViolationInput, AuditResult, AuditReport
-  llm_client.py        OllamaClient, MockClient, LLMClientProtocol, get_client()
+  fix_engine.py        RuleEngine, FixEngineProtocol, get_engine(), _sanitize_html_for_prompt; BC aliases for the old llm_client names kept until 0.4.0
   axe_runner.py        run_axe(), run_axe_from_json(), _extract_wcag_criterion()
   auditor.py           Auditor: drives Playwright + axe + LLM
   database.py          SQLite via sqlite-utils
@@ -29,7 +29,7 @@ src/wcag_auditor/
   static/axe.min.js    axe-core (gitignored; run `make download-axe`)
 
 tests/
-  unit/                Fast, no browser, no Ollama
+  unit/                Fast, no browser, no network
   eval/                Metric-driven; CI subset + full run
   fixtures/
     html/              6 curated violation fixtures
@@ -44,8 +44,8 @@ scripts/
 
 ```bash
 make test-unit        # always fast, no deps
-make eval             # CI eval (MOCK_LLM=1, no browser/Ollama)
-make eval-full        # full eval (needs `ollama serve` + llama3.1:8b)
+make eval             # CI eval (WCAG_MOCK_AXE=1, no browser; uses .axe.json sidecars)
+make eval-full        # full eval (Playwright + Chromium; no model server)
 make check-regression # gate
 make lint
 ```
@@ -53,9 +53,9 @@ make lint
 ## Context-window strategy
 
 - axe output can be large; `auditor.py` truncates `html_context` to 3000 chars.
-- `ViolationInput.nodes` is passed through; `OllamaClient` trims node HTML to 500 chars before prompting.
-- `AuditResult` is JSON-only from Ollama. No prose parsing.
-- One LLM call per violation, no batching. Keeps per-violation retry tractable.
+- `ViolationInput.nodes` is passed through; `RuleEngine` reads only the first node's `html` field. No external prompt is constructed.
+- `AuditResult` is produced deterministically by `RuleEngine`. No prose parsing.
+- One `RuleEngine` call per violation, no batching. Keeps per-violation retry tractable.
 
 ## Don't-do list
 
@@ -79,7 +79,7 @@ make lint
 | `axe_runner.py` `_check_http_url_safe` | REVIEW | SSRF guard (B11). Always blocks 169.254/16. |
 | `axe_runner.py` (rest) | SAFE | Read-only page evaluation. |
 | `database.py` | REVIEW | chmod 600 + WAL on first open. |
-| `llm_client.py` | REVIEW | Localhost Ollama only. 64KB cap on response (B5). |
+| `fix_engine.py` | SAFE | RuleEngine only. No external calls, no network surface. `_sanitize_html_for_prompt` is retained as a defensive HTML normalizer for axe `html_context` snippets. |
 | `auditor.py` | REVIEW | Playwright launch. `--no-sandbox` is opt-in (B9). |
 | `cli.py` | SAFE | Typer handles shell escaping; no subprocess. |
 | `eval_metrics.py` `FixApplicabilityMetric` | DANGER | Launches browser + writes temp files. Untrusted HTML = no. |
@@ -87,13 +87,13 @@ make lint
 
 ## CI vs local eval
 
-| Run | MOCK_LLM | Browser | Ollama | Gate |
-|-----|----------|---------|--------|------|
-| `make test-unit` | not needed | no | no | always |
-| `make eval` (CI) | yes | no | no | schema_compliance_rate only |
-| `make eval-full` | no | yes | yes | all 6 metrics |
+| Run | WCAG_MOCK_AXE | Browser | Gate |
+|-----|---------------|---------|------|
+| `make test-unit` | not needed | no | always |
+| `make eval` (CI) | yes | no | schema_compliance_rate only |
+| `make eval-full` | no | yes | all 6 metrics |
 
-CI only enforces `schema_compliance_rate`. Everything else needs `make eval-full` against a running Ollama.
+CI only enforces `schema_compliance_rate`. The remaining 5 metrics (criterion accuracy, impact accuracy, hallucination rate, fix applicability, false-negative rate) require `make eval-full`, which needs a Playwright-installed Chromium but no model server.
 
 ## Session log
 

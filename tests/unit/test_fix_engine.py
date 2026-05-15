@@ -1,10 +1,10 @@
-"""Unit tests for RuleEngine fix generation in llm_client.py.
+"""Unit tests for RuleEngine fix generation in fix_engine.py.
 
 No external dependencies required.
 """
 from __future__ import annotations
 
-from wcag_auditor.llm_client import RuleEngine, _sanitize_html_for_prompt
+from wcag_auditor.fix_engine import RuleEngine, _sanitize_html_for_prompt
 from wcag_auditor.models import AuditResult, ImpactLevel, ViolationInput
 
 

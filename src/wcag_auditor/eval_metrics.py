@@ -33,23 +33,29 @@ class SchemaComplianceMetric:
             )
 
         failures: list[str] = []
+        failed_result_ids: set[str] = set()
         for r in results:
             if not isinstance(r, AuditResult):
                 failures.append(f"Result is not AuditResult: {type(r)}")
+                failed_result_ids.add(str(id(r)))
                 continue
             if not (0.0 <= r.confidence_score <= 1.0):
                 failures.append(f"rule_id={r.rule_id}: confidence_score out of range: {r.confidence_score}")
+                failed_result_ids.add(r.rule_id)
             if not isinstance(r.fixes, list):
                 failures.append(f"rule_id={r.rule_id}: fixes is not a list")
+                failed_result_ids.add(r.rule_id)
             if not r.wcag_criterion:
                 failures.append(f"rule_id={r.rule_id}: wcag_criterion is empty")
+                failed_result_ids.add(r.rule_id)
             try:
                 ImpactLevel(r.impact)
             except ValueError:
                 failures.append(f"rule_id={r.rule_id}: invalid impact: {r.impact}")
+                failed_result_ids.add(r.rule_id)
 
-        score = (len(results) - len(failures)) / len(results)
-        reason = f"{len(results) - len(failures)}/{len(results)} results passed schema validation."
+        score = (len(results) - len(failed_result_ids)) / len(results)
+        reason = f"{len(results) - len(failed_result_ids)}/{len(results)} results passed schema validation."
         if failures:
             reason += f" Failures: {'; '.join(failures[:5])}"
 

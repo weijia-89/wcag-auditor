@@ -7,7 +7,7 @@ from wcag_auditor.models import AuditResult, ViolationFix, ViolationInput
 
 # Regex for lines that look like prompt-injection role headers.
 _ROLE_HEADER_RE = re.compile(
-    r"^(#{1,6}\s|system:|assistant:|human:|user:|ignore\b)",
+    r"^(#{1,6}\s|system:|assistant:|human:|user:|ignore\b).*$",
     re.IGNORECASE | re.MULTILINE,
 )
 # Matches <script ...>...</script> blocks including across newlines.
@@ -43,7 +43,7 @@ def _sanitize_html_for_prompt(html: str) -> str:
 
 
 @runtime_checkable
-class LLMClientProtocol(Protocol):
+class FixEngineProtocol(Protocol):
     """Anything that turns a ViolationInput into a fully-populated AuditResult."""
 
     def generate_fix(
@@ -109,9 +109,10 @@ _DEFAULT_MOCK_FIX = {
 class RuleEngine:
     """Deterministic rule-based fix generator. No external dependencies.
 
-    Returns the same shape as the former OllamaClient, with confidence_score
-    fixed at 0.95 and explanation prefixed with "[RULE]" so a test fixture
-    leaking into a real audit is obvious in the report.
+    Returns the same shape as the former ``OllamaClient`` (removed in 0.3.0),
+    with ``confidence_score`` fixed at 0.95 and ``explanation`` prefixed with
+    ``[RULE]`` so a test fixture leaking into a real audit is obvious in the
+    report.
     """
 
     def generate_fix(
@@ -162,6 +163,18 @@ class RuleEngine:
         )
 
 
-def get_client(model: str = "llama3.1:8b") -> LLMClientProtocol:
-    """Returns a RuleEngine instance."""
+def get_engine() -> FixEngineProtocol:
+    """Returns a ``RuleEngine`` instance. No model argument since 0.3.0."""
+    return RuleEngine()
+
+
+# Backwards-compatible aliases. The ``model`` argument is accepted and
+# silently ignored so callers that hard-coded ``get_client(model="...")``
+# do not break on upgrade. Slated for removal in 0.4.0.
+LLMClientProtocol = FixEngineProtocol
+
+
+def get_client(model: str = "llama3.1:8b") -> FixEngineProtocol:
+    """Deprecated alias for ``get_engine()``. The ``model`` arg is ignored."""
+    del model  # explicit: argument is unused
     return RuleEngine()

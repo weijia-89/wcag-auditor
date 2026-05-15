@@ -8,7 +8,7 @@ from rich import print as rprint
 
 from wcag_auditor.axe_runner import _reject_if_outside_cwd, run_axe, run_axe_from_json
 from wcag_auditor.database import save_report
-from wcag_auditor.llm_client import LLMClientProtocol, _sanitize_html_for_prompt, get_client
+from wcag_auditor.fix_engine import FixEngineProtocol, _sanitize_html_for_prompt, get_engine
 from wcag_auditor.models import AuditReport, AuditResult, ViolationInput
 
 # WCAG_LLM_BATCH_SIZE controls how many violations are processed per logical
@@ -48,19 +48,23 @@ def _find_axe_sidecar(path_or_url: str) -> str | None:
 
 
 class Auditor:
-    """Orchestrates axe-core scanning and LLM fix generation.
+    """Orchestrates axe-core scanning and fix generation.
 
-    Pass a custom ``llm_client`` to swap the LLM (for tests, alternate
-    backends, or canary runs). The default falls through to ``get_client()``
-    which honours the ``WCAG_MOCK_AXE=1`` env var.
+    Pass a custom ``fix_engine`` to swap the engine (for tests, alternate
+    backends, or canary runs). The default falls through to ``get_engine()``.
+    The legacy ``llm_client`` kwarg is accepted for backwards compatibility
+    and is slated for removal in 0.4.0.
     """
 
     def __init__(
         self,
-        llm_client: LLMClientProtocol | None = None,
+        fix_engine: FixEngineProtocol | None = None,
         timeout_ms: int = 15_000,
+        llm_client: FixEngineProtocol | None = None,
     ) -> None:
-        self._llm = llm_client if llm_client is not None else get_client()
+        # BC: accept the old kwarg name if a caller still uses it.
+        engine = fix_engine if fix_engine is not None else llm_client
+        self._engine = engine if engine is not None else get_engine()
         self._timeout_ms = timeout_ms
 
     def audit(self, path_or_url: str, save: bool = True) -> AuditReport:
@@ -98,7 +102,7 @@ class Auditor:
                 file=sys.stderr,
             )
             try:
-                result = self._llm.generate_fix(violation, html_context, path_or_url)
+                result = self._engine.generate_fix(violation, html_context, path_or_url)
                 results.append(result)
             except Exception as exc:  # noqa: BLE001
                 # One bad violation should not abort the whole audit. Log it,

@@ -4,7 +4,6 @@ install:
 	uv sync
 	uv run playwright install chromium --with-deps
 	$(MAKE) download-axe
-	@echo "Then: ollama pull llama3.1:8b"
 
 # B8: download-axe now goes through the SHA256-pinned script. The script
 # fails closed if EXPECTED_SHA256 is the placeholder — populate it before
@@ -18,7 +17,7 @@ eval:
 	  -k "not test_fix_accuracy and not test_hallucination and not test_criterion_accuracy"
 
 eval-full:
-	@echo "Requires: ollama serve + llama3.1:8b pulled"
+	@echo "Requires: Playwright-installed Chromium. No model server needed since 0.3.0."
 	uv run pytest tests/eval/ -v --json-report --json-report-file=eval_results_full.json
 
 test-unit:
@@ -33,7 +32,7 @@ import json, sys; \
 b = json.loads(open('eval_baseline.json').read()); \
 vals = [v for k, v in b.items() if not k.startswith('_')]; \
 is_zero = vals and all(v == 0.0 for v in vals); \
-print('WARNING: eval_baseline.json is all-zeros. Run \"make eval-full\" against a real Ollama instance first to generate a meaningful baseline. Regression gate is SKIPPING (not failing) until baseline is populated.', file=sys.stderr) if is_zero else None; \
+print('WARNING: eval_baseline.json is all-zeros. Run \"make eval-full\" against the curated fixtures first to generate a meaningful baseline. Regression gate is SKIPPING (not failing) until baseline is populated.', file=sys.stderr) if is_zero else None; \
 sys.exit(3) if is_zero else None"  || [ $$? -eq 3 ] && exit 0
 	uv run python scripts/check_regression.py \
 	  --results eval_results.json \
