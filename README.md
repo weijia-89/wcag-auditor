@@ -2,15 +2,15 @@
 
 [![CI](https://github.com/weijia-89/wcag-auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/weijia-89/wcag-auditor/actions/workflows/ci.yml)
 
-The standard WCAG workflow is: run axe-core, read the violation ID, look up the criterion, figure out what to actually change. This shortens the last step. Playwright injects axe-core into the page; violations come back as structured objects; each one goes through a per-rule fix engine (`RuleEngine`) that returns a hand-written fix template for that axe rule ID, with selector, suggested HTML, and a plain-language explanation. Pydantic validates the output before it hits your terminal. HTML stays on your machine.
+The standard WCAG workflow is: run axe-core, read the violation ID, look up the criterion, figure out what to actually change. This tool shortens the last step. Playwright injects axe-core into the page; violations come back as structured objects; each one goes through a per-rule fix engine (`RuleEngine`) that returns a hand-written fix template for that axe rule ID, with selector, suggested HTML, and a plain-language explanation. Pydantic validates the output before it hits your terminal, and the HTML you audit never leaves your machine because nothing is sent anywhere.
 
 The 0.2.x line ran each violation through a local Ollama LLM. The 0.3.0 release replaced that with deterministic per-rule templates for two reasons. First, against the curated fixture set, the templates were already accurate enough that the LLM call wasn't adding signal. Second, a deterministic engine removes the network surface, the prompt-injection class, and the model-dependent CI variance that came with running a local model. The trade is real: fix quality is now bounded by what's in the template set rather than by model capability. For axe rules outside that set, a generic fallback runs; the report still surfaces the violation, with less-specific remediation text.
 
-The fixes don't apply themselves. That's intentional.
+The fixes do not apply themselves, which is intentional, because the engineer reading the report is the one who has to decide what changes ship.
 
-axe-core catches roughly 30-40% of WCAG 2.2 issues. This doesn't change that number. It makes the 30-40% faster to act on, which is a different and more honest thing to claim.
+axe-core catches roughly 30-40% of WCAG 2.2 issues, and this tool does not change that number, it makes the 30-40% faster to act on, which is a different and more honest thing to claim.
 
-Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`. That's it. No account, no sync, no SaaS dashboard with usage metrics, just a local file you can query yourself if you want to.
+Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`, a local file with no account behind it, no sync to anywhere, and no SaaS dashboard ingesting your usage. You can query it directly from your shell if you want to.
 
 ## Install
 
@@ -87,5 +87,18 @@ File lives at `~/.local/share/wcag-auditor/audits.db` with mode 0600. Override w
 
 - **No auto-applied fixes.** Suggestions only. You read them, you decide, you change the code.
 - **No cloud, no model server.** Fix generation runs in-process via `RuleEngine`. The HTML never leaves your machine because nothing is sent anywhere.
-- **Not a replacement for manual a11y testing.** axe-core is automated and catches roughly 30-40% of real-world WCAG issues. The rest requires keyboard navigation, screen reader passes, and a human who knows what they're doing. This tool doesn't pretend otherwise.
+- **Not a replacement for manual a11y testing.** axe-core is automated and catches roughly 30-40% of real-world WCAG issues, and the rest requires keyboard navigation, screen reader passes, and a human who knows what they are doing, which this tool does not pretend to substitute for.
 - **No CI reporter.** Pipe `--output json` into whatever you've got.
+
+## Related portfolio repos
+
+wcag-auditor sits in a portfolio of QA-for-AI work. The two repos that pair most directly:
+
+- **[`weijia-89/playwrighter`](https://github.com/weijia-89/playwrighter)**: production Playwright pattern library plus a working test-quality scorer. Useful when you want the axe-core run and the fix verification inside an actual Playwright suite rather than a one-off CLI invocation.
+- **[`weijia-89/northwind-qa`](https://github.com/weijia-89/northwind-qa)**: a 50-test Playwright suite that exercises playwrighter's patterns end-to-end and includes an axe-core a11y pass against the SUT. The worked example for putting the two together.
+
+Three more in the same ethos:
+
+- **[`weijia-89/vibe-check`](https://github.com/weijia-89/vibe-check)**: reviewer evidence surfacer for PRs that may contain LLM-generated code. Same trade I made in wcag-auditor v0.3 (deterministic templates over an in-the-loop LLM), applied to PR review.
+- **[`weijia-89/oncology-rag-lab`](https://github.com/weijia-89/oncology-rag-lab)**: offline RAG evaluation lab with DeepEval, Phoenix tracing, drift detection, and a regression-gated CI. Same "the wrap matters more than the pipeline" stance applied to LLM evaluation rather than a11y remediation.
+- **[`weijia-89/palamedes`](https://github.com/weijia-89/palamedes)**: rigorous-research skill plus a multi-agent synthesis prompt. Companion artifact when the eval target is research output rather than code or accessibility.
