@@ -99,3 +99,15 @@ CI only enforces `schema_compliance_rate`. The remaining 5 metrics (criterion ac
 
 - 2026-04-28: scaffold created. Source, tests, fixtures, scripts.
 - 2026-04-30: hardening pass. B1, B2, B5, B8, B9, B11 fixed. See CHANGELOG.md.
+
+## Cursor Cloud specific instructions
+
+The update script runs `uv sync` in this repo. Playwright chromium and
+`axe.min.js` are installed separately via `make install` (which also calls
+`uv sync`).
+
+- **Unit tests:** `uv run pytest tests/unit/ -v` (109 tests, no browser needed)
+- **Lint:** `uv run ruff check src/ tests/`
+- **Mock eval (CI):** `WCAG_MOCK_AXE=1 uv run pytest tests/eval/ -v -k "not test_fix_accuracy and not test_hallucination and not test_criterion_accuracy"`
+- **Full eval:** `make eval-full` (needs Playwright-installed Chromium; run `uv run playwright install chromium --with-deps` first)
+- The `download-axe` Makefile target fetches `axe.min.js` with SHA256 verification. If the hash placeholder is unset, it fails closed.
