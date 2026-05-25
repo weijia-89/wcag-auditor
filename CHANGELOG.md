@@ -7,6 +7,8 @@ All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.c
 ### Added
 
 - **CI template regression gate.** Workflow installs Playwright + pinned axe-core, then runs unit tests including a golden-string regression for `image-alt` RuleEngine output and a headless fixture audit smoke on `missing_alt_001.html` (no outbound LLM).
+- **`scripts/download_axe.py` npm CDN source.** GitHub release assets no longer ship `axe.min.js`; download now pulls from the pinned jsDelivr/npm bundle with an updated SHA256.
+- **Placeholder guard fix.** `_check_axe_installed` no longer treats legitimate minified axe bundles as placeholders solely because they contain `throw new Error`.
 
 ## [0.3.1] - 2026-05-15
 

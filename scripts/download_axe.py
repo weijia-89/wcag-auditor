@@ -18,11 +18,12 @@ from pathlib import Path
 
 # Bump version + hash together. Don't update one without the other.
 AXE_VERSION = "4.10.2"
-URL = f"https://github.com/dequelabs/axe-core/releases/download/v{AXE_VERSION}/axe.min.js"
+# GitHub release assets no longer ship axe.min.js; npm registry is the pinned source.
+URL = f"https://cdn.jsdelivr.net/npm/axe-core@{AXE_VERSION}/axe.min.js"
 
-# SHA256 of axe-core v4.10.2 axe.min.js — verified against the shipped file.
-# To re-verify: sha256sum src/wcag_auditor/static/axe.min.js
-EXPECTED_SHA256 = "103da4883e9a709b6d8b88c68f4118f642b200abae9488638db92422c5be44ec"
+# SHA256 of axe-core v4.10.2 axe.min.js from the npm package.
+# To re-verify: curl -fsSL "$URL" | shasum -a 256
+EXPECTED_SHA256 = "b511cd9dec01c76f4b2ad1723b66b6db37d4c2eb4ed199076e1829d9ee7b75e3"
 
 OUT = Path(__file__).parent.parent / "src" / "wcag_auditor" / "static" / "axe.min.js"
 

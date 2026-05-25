@@ -142,7 +142,7 @@ def _check_axe_installed() -> None:
     content = AXE_JS_PATH.read_text(encoding="utf-8", errors="replace")
     # Repo ships a placeholder so `git clone && pytest` doesn't accidentally
     # exfiltrate axe-core's MPL bundle. The placeholder throws on load.
-    if "axe-core placeholder" in content or "throw new Error" in content:
+    if "axe-core placeholder" in content:
         raise FileNotFoundError(
             f"axe.min.js at {AXE_JS_PATH} is still the placeholder file. "
             "Run: make download-axe"

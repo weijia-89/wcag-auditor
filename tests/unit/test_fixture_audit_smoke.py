@@ -27,7 +27,7 @@ def _axe_bundle_ready() -> bool:
     if not AXE_JS_PATH.exists():
         return False
     content = AXE_JS_PATH.read_text(encoding="utf-8", errors="replace")
-    return "axe-core placeholder" not in content and "throw new Error" not in content
+    return "axe-core placeholder" not in content
 
 
 @pytest.fixture
