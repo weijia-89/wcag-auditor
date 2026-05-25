@@ -1,4 +1,4 @@
-.PHONY: install download-axe eval eval-full test-unit lint audit verify-ci
+.PHONY: install download-axe eval eval-full test-unit lint audit verify verify-ci
 
 install:
 	uv sync
@@ -26,7 +26,10 @@ test-unit:
 lint:
 	uv run ruff check src/ tests/
 
-# sdk-review F3: mirrors .github/workflows/ci.yml — use for SDK verify / local CI parity
+# Alias for SDK workers / local runs that need the same steps as .github/workflows/ci.yml
+verify: verify-ci
+
+# Full CI parity (Playwright + pinned axe + lint + unit/smoke). Prefer over bare pytest.
 verify-ci:
 	uv sync --all-groups
 	uv run playwright install chromium --with-deps

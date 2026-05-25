@@ -112,11 +112,13 @@ target (str) -> Auditor.audit
 `.github/workflows/ci.yml` runs on push and PR to `main`.
 
 - Runner: `ubuntu-latest`, Python 3.11 via `astral-sh/setup-uv@v4`.
-- Install: `uv sync --all-groups` (pulls dev group: pytest, ruff, etc.).
-- Test step: `uv run pytest tests/unit/ -v`. Unit tests use `RuleEngine` and recorded axe output; no Playwright binary and no model server needed in CI.
+- Install: `uv sync --all-groups`, then `uv run playwright install chromium --with-deps`, then `uv run python scripts/download_axe.py` (pinned jsDelivr/npm bundle + SHA256 verify).
+- Lint: `uv run ruff check src/ tests/`.
+- Test step: `WCAG_NO_SANDBOX=1 uv run pytest tests/unit/ -v`. Includes golden-string template regression (no browser), placeholder guard tests, and a headless fixture audit smoke on `missing_alt_001.html` (Playwright + real `axe.min.js`). No model server needed in CI.
 - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is set at the workflow level.
+- Local/SDK parity: `make verify-ci` mirrors the workflow steps above.
 
-The full eval (`make eval-full`) is not in CI because it requires a Playwright-installed Chromium. Run it locally before tagging a release. Don't skip this step.
+The full eval (`make eval-full`) is not in CI; run it locally before tagging a release. Don't skip this step.
 
 ## What we deliberately did not do
 

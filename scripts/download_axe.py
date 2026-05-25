@@ -40,7 +40,6 @@ def main() -> None:
         sys.exit(2)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    # sdk-review F1: doc/print must name jsDelivr/npm, not legacy GitHub release assets
     print(f"Downloading axe-core v{AXE_VERSION} from pinned npm/jsDelivr URL...")
     print(f"  URL: {URL}")
     print(f"  OUT: {OUT}")

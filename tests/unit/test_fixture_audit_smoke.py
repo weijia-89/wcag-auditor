@@ -42,7 +42,7 @@ class TestFixtureAuditSmoke:
         pytest.importorskip("playwright")
 
         if not _axe_bundle_ready():
-            # sdk-review F3: fail closed so verify/CI cannot green without the smoke gate
+            # Fail closed: CI must install axe before this smoke gate can pass.
             pytest.fail(
                 "axe.min.js not installed — run: make download-axe "
                 "(or uv run python scripts/download_axe.py)"
