@@ -106,7 +106,7 @@ The update script runs `uv sync` in this repo. Playwright chromium and
 `axe.min.js` are installed separately via `make install` (which also calls
 `uv sync`).
 
-- **Full CI parity:** `make verify-ci` (sync, Playwright Chromium, pinned axe download, lint, unit + smoke tests with `WCAG_NO_SANDBOX=1`)
+- **Full CI parity (SDK verify):** `make verify-ci` or `uv run python scripts/verify.py` — not bare `uv sync && ruff && pytest` (smoke gate needs Playwright + pinned axe)
 - **Fast unit tests only:** `uv run pytest tests/unit/ -v` (fails on smoke gate if `axe.min.js` is still the placeholder — use `make verify-ci` on a clean tree)
 - **Lint:** `uv run ruff check src/ tests/`
 - **Mock eval (CI):** `WCAG_MOCK_AXE=1 uv run pytest tests/eval/ -v -k "not test_fix_accuracy and not test_hallucination and not test_criterion_accuracy"`

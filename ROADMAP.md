@@ -1,13 +1,14 @@
 # Roadmap
 
-Updated 2026-04-30. Order within each section reflects priority, not commitment. None of this is a release schedule.
+Updated 2026-05-25. Order within each section reflects priority, not commitment. None of this is a release schedule.
 
 ## Next
 
-Housekeeping first. There's a small set of items that block the eval numbers from being trustworthy, and until these land, `make eval-full` is informative but not a gate. The baseline is synthetic, the axe hash is a placeholder, and the install path isn't reproducible. None of those are blocking in the sense that the tool won't run, but they are blocking in the sense that you can't trust the numbers, and a tool whose eval results you can't trust is harder to defend when it matters.
+Housekeeping first. There's a small set of items that block the eval numbers from being trustworthy, and until these land, `make eval-full` is informative but not a gate. The baseline is synthetic and the install path isn't reproducible. None of those are blocking in the sense that the tool won't run, but they are blocking in the sense that you can't trust the numbers, and a tool whose eval results you can't trust is harder to defend when it matters.
+
+**Done (2026-05):** SHA-pinned `axe.min.js` via jsDelivr/npm bundle + SHA256 verify in `scripts/download_axe.py` (axe-core 4.10.2).
 
 - **Real eval baseline.** `eval_baseline.json` currently reflects a synthetic run. Capture numbers from `make eval-full` against the curated fixtures with the deterministic `RuleEngine`, commit them, and let `--accept-zero-baseline` retire. The regression gate isn't useful until the baseline reflects a real run.
-- **SHA-pin axe.min.js.** `scripts/download_axe.py` already verifies SHA256. The `EXPECTED_SHA256` constant is still the placeholder value. Populate it with the hash for axe-core 4.10.2, which is what `download-axe` targets.
 - **Hash-pinned lockfile.** `pyproject.toml` doesn't pin transitive deps right now, which means the install path is not reproducible across machines, which means "it works on my laptop" is doing too much work. Switch to `uv pip compile --generate-hashes` and check the resulting `requirements.txt` into the repo.
 - **Test the `Auditor` class directly.** Today `axe_runner`, the fix engine shape, and the regression gate all have unit coverage. `auditor.audit` is exercised only end-to-end. Add a unit test that injects a stub `FixEngineProtocol` implementation and a fake violation list, so an `auditor.py` refactor shows up in tests before it shows up in prod.
 

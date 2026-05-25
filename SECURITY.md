@@ -26,7 +26,7 @@ Please don't open public issues for suspected security bugs. Give me 90 days bef
 | SSRF to loopback / RFC1918 | Blocked by default. Opt in with `WCAG_ALLOW_LOCALHOST=1` or `WCAG_ALLOW_PRIVATE_NET=1`. |
 | Browser sandbox escape from a malicious page | Chromium sandbox stays on by default. `--no-sandbox` is opt-in via `WCAG_NO_SANDBOX=1` or `--unsafe-no-sandbox`. |
 | Prompt-injected LLM response that exhausts memory | Not applicable since 0.3.0. `OllamaClient` was removed; `RuleEngine` is an in-process deterministic function with no network I/O. The HTML-sanitization helper `_sanitize_html_for_prompt` is preserved for defensive normalization of axe `html_context` snippets. |
-| Modified `axe.min.js` shipping malicious JS | `scripts/download_axe.py` pulls a tagged release URL and SHA256-checks it; refuses to write on mismatch or unset hash. |
+| Modified `axe.min.js` shipping malicious JS | `scripts/download_axe.py` pulls the pinned jsDelivr/npm `axe-core@{VERSION}` bundle and SHA256-checks it; refuses to write on mismatch or unset hash. |
 | DB world-readable on a shared host | Database is chmod'd to 0600 on every open in `_get_db`. |
 | Audit output exposing scanned content via shared logs | History DB and reports stay local. Nothing is uploaded. |
 | Untrusted input to `FixApplicabilityMetric` (writes temp HTML, launches browser) | Documented as DANGER in CLAUDE.md. Don't run on untrusted HTML. |

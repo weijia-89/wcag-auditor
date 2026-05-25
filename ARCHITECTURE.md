@@ -116,7 +116,7 @@ target (str) -> Auditor.audit
 - Lint: `uv run ruff check src/ tests/`.
 - Test step: `WCAG_NO_SANDBOX=1 uv run pytest tests/unit/ -v`. Includes golden-string template regression (no browser), placeholder guard tests, and a headless fixture audit smoke on `missing_alt_001.html` (Playwright + real `axe.min.js`). No model server needed in CI.
 - `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` is set at the workflow level.
-- Local/SDK parity: `make verify-ci` mirrors the workflow steps above.
+- Local/SDK parity: `make verify-ci` or `uv run python scripts/verify.py` mirrors the workflow steps above.
 
 The full eval (`make eval-full`) is not in CI; run it locally before tagging a release. Don't skip this step.
 

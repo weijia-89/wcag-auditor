@@ -31,11 +31,7 @@ verify: verify-ci
 
 # Full CI parity (Playwright + pinned axe + lint + unit/smoke). Prefer over bare pytest.
 verify-ci:
-	uv sync --all-groups
-	uv run playwright install chromium --with-deps
-	$(MAKE) download-axe
-	uv run ruff check src/ tests/
-	WCAG_NO_SANDBOX=1 uv run pytest tests/unit/ -q --maxfail=5
+	uv run python scripts/verify.py
 
 check-regression:
 	@uv run python -c "\

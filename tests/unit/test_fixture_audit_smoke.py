@@ -9,19 +9,13 @@ from pathlib import Path
 
 import pytest
 
+from tests.unit._golden_image_alt import GOLDEN_FIX_HTML, GOLDEN_RESULT_EXPLANATION
 from wcag_auditor.auditor import Auditor
 from wcag_auditor.axe_runner import AXE_JS_PATH
 from wcag_auditor.fix_engine import RuleEngine
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 _FIXTURE = "tests/fixtures/html/missing_alt_001.html"
-
-_GOLDEN_FIX_HTML = "<img src='image.png' alt='[Descriptive alternative text]'>"
-_GOLDEN_RESULT_EXPLANATION = (
-    "[RULE] Add a descriptive alt attribute to convey the image content "
-    "to screen reader users."
-)
-
 
 def _axe_bundle_ready() -> bool:
     if not AXE_JS_PATH.exists():
@@ -59,8 +53,8 @@ class TestFixtureAuditSmoke:
         assert image_alt, "expected at least one image-alt violation from fixture"
 
         result = image_alt[0]
-        assert result.explanation == _GOLDEN_RESULT_EXPLANATION
+        assert result.explanation == GOLDEN_RESULT_EXPLANATION
         assert result.confidence_score == 0.95
         assert len(result.fixes) == 1
-        assert result.fixes[0].fix_html == _GOLDEN_FIX_HTML
+        assert result.fixes[0].fix_html == GOLDEN_FIX_HTML
         assert result.fixes[0].element_selector == "img"
