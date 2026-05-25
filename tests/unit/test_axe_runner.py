@@ -138,7 +138,7 @@ class TestRunAxeFromJson:
 
 
 class TestRunAxePlaceholderGuard:
-    # The repo ships a placeholder axe.min.js; this checks the live guard.
+    # sdk-review F2: guard tested via isolated tmp stub; repo does not ship axe.min.js.
 
     def test_raises_when_axe_is_placeholder(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

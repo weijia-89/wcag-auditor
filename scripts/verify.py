@@ -7,7 +7,7 @@ Mirrors `.github/workflows/ci.yml` and `make verify-ci`.
     # or:
     make verify-ci
 
-# sdk-review F4: SDK orchestrator verify must match CI prerequisites, not bare pytest.
+# sdk-review F1: SDK orchestrator verify must match CI prerequisites, not bare pytest.
 """
 from __future__ import annotations
 
