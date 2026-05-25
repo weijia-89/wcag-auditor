@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Download axe.min.js from a pinned GitHub release and SHA256-check it.
+"""Download axe.min.js from the pinned npm/jsDelivr bundle and SHA256-check it.
 
     uv run python scripts/download_axe.py
     # or:
     make download-axe
 
-B8 hardening: URL is pinned to a tagged release (no `latest/download` moving
-target), and the body is hashed before write. If EXPECTED_SHA256 is still the
-TODO placeholder, this script refuses. Fail-closed beats fail-yolo.
+B8 hardening: URL is pinned to axe-core@VERSION on jsDelivr (no `latest/download`
+moving target), and the body is hashed before write. If EXPECTED_SHA256 is still
+the TODO placeholder, this script refuses. Fail-closed beats fail-yolo.
 """
 from __future__ import annotations
 
@@ -40,7 +40,8 @@ def main() -> None:
         sys.exit(2)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    print(f"Downloading axe-core v{AXE_VERSION} from pinned release URL...")
+    # sdk-review F1: doc/print must name jsDelivr/npm, not legacy GitHub release assets
+    print(f"Downloading axe-core v{AXE_VERSION} from pinned npm/jsDelivr URL...")
     print(f"  URL: {URL}")
     print(f"  OUT: {OUT}")
 

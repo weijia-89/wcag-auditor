@@ -133,11 +133,11 @@ def _check_http_url_safe(url: str) -> None:
 
 def _check_axe_installed() -> None:
     if not AXE_JS_PATH.exists():
+        # sdk-review F2: GitHub latest/download no longer ships axe.min.js; use pinned script
         raise FileNotFoundError(
             f"axe-core not found at {AXE_JS_PATH}. "
             "Run: make download-axe\n"
-            "Or:  curl -fsSL https://github.com/dequelabs/axe-core/releases/latest/download/axe.min.js "
-            f"-o {AXE_JS_PATH}"
+            "Or:  uv run python scripts/download_axe.py"
         )
     content = AXE_JS_PATH.read_text(encoding="utf-8", errors="replace")
     # Repo ships a placeholder so `git clone && pytest` doesn't accidentally

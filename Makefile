@@ -1,4 +1,4 @@
-.PHONY: install download-axe eval eval-full test-unit lint audit
+.PHONY: install download-axe eval eval-full test-unit lint audit verify-ci
 
 install:
 	uv sync
@@ -25,6 +25,14 @@ test-unit:
 
 lint:
 	uv run ruff check src/ tests/
+
+# sdk-review F3: mirrors .github/workflows/ci.yml — use for SDK verify / local CI parity
+verify-ci:
+	uv sync --all-groups
+	uv run playwright install chromium --with-deps
+	$(MAKE) download-axe
+	uv run ruff check src/ tests/
+	WCAG_NO_SANDBOX=1 uv run pytest tests/unit/ -q --maxfail=5
 
 check-regression:
 	@uv run python -c "\

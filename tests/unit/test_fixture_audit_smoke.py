@@ -42,7 +42,11 @@ class TestFixtureAuditSmoke:
         pytest.importorskip("playwright")
 
         if not _axe_bundle_ready():
-            pytest.skip("axe.min.js not installed — run make download-axe")
+            # sdk-review F3: fail closed so verify/CI cannot green without the smoke gate
+            pytest.fail(
+                "axe.min.js not installed — run: make download-axe "
+                "(or uv run python scripts/download_axe.py)"
+            )
 
         monkeypatch.chdir(project_root)
         monkeypatch.setenv("WCAG_NO_SANDBOX", "1")
