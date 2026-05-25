@@ -133,16 +133,16 @@ def _check_http_url_safe(url: str) -> None:
 
 def _check_axe_installed() -> None:
     if not AXE_JS_PATH.exists():
+        # GitHub release assets no longer ship axe.min.js; use scripts/download_axe.py.
         raise FileNotFoundError(
             f"axe-core not found at {AXE_JS_PATH}. "
             "Run: make download-axe\n"
-            "Or:  curl -fsSL https://github.com/dequelabs/axe-core/releases/latest/download/axe.min.js "
-            f"-o {AXE_JS_PATH}"
+            "Or:  uv run python scripts/download_axe.py"
         )
     content = AXE_JS_PATH.read_text(encoding="utf-8", errors="replace")
-    # Repo ships a placeholder so `git clone && pytest` doesn't accidentally
-    # exfiltrate axe-core's MPL bundle. The placeholder throws on load.
-    if "axe-core placeholder" in content or "throw new Error" in content:
+    # sdk-review F2: axe.min.js is gitignored — fresh clones have no file; run download-axe.
+    # If a local placeholder stub exists, detect it by marker (not bundled in git).
+    if "axe-core placeholder" in content:
         raise FileNotFoundError(
             f"axe.min.js at {AXE_JS_PATH} is still the placeholder file. "
             "Run: make download-axe"

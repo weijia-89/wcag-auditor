@@ -138,9 +138,19 @@ class TestRunAxeFromJson:
 
 
 class TestRunAxePlaceholderGuard:
-    # The repo ships a placeholder axe.min.js; this checks the live guard.
+    # sdk-review F2: guard tested via isolated tmp stub; repo does not ship axe.min.js.
 
-    def test_raises_when_axe_is_placeholder(self) -> None:
+    def test_raises_when_axe_is_placeholder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import wcag_auditor.axe_runner as axe_module
+
+        placeholder = tmp_path / "axe.min.js"
+        placeholder.write_text(
+            "/* axe-core placeholder */\nthrow new Error('Run make download-axe');\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(axe_module, "AXE_JS_PATH", placeholder)
         mock_page = MagicMock()
         with pytest.raises(FileNotFoundError, match="axe-core|placeholder"):
             run_axe(mock_page, "https://example.com")

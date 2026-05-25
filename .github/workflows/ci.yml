@@ -23,10 +23,16 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
+      - name: Install Playwright Chromium
+        run: uv run playwright install chromium --with-deps
+
+      - name: Download axe-core bundle
+        run: uv run python scripts/download_axe.py
+
       - name: Lint
         run: uv run ruff check src/ tests/
 
-      - name: Run unit tests
-        # Unit tests use mocked axe output — no Playwright or live browser needed.
-        # The full auditor (run_axe) requires: uv run playwright install chromium --with-deps
+      - name: Run unit tests (template regression + fixture audit smoke)
+        env:
+          WCAG_NO_SANDBOX: "1"
         run: uv run pytest tests/unit/ -v
