@@ -2,6 +2,12 @@
 
 All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioning: SemVer.
 
+## [Unreleased]
+
+### Added
+
+- **CI template regression gate.** Workflow installs Playwright + pinned axe-core, then runs unit tests including a golden-string regression for `image-alt` RuleEngine output and a headless fixture audit smoke on `missing_alt_001.html` (no outbound LLM).
+
 ## [0.3.1] - 2026-05-15
 
 ### Changed
