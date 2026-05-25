@@ -16,6 +16,8 @@
 
 ## Layout
 
+<!-- sdk-review F3: unit/ includes headless smoke (Playwright + axe), not browser-free. -->
+
 ```
 src/wcag_auditor/
   __init__.py          empty
@@ -29,7 +31,7 @@ src/wcag_auditor/
   static/axe.min.js    axe-core (gitignored; run `make download-axe`)
 
 tests/
-  unit/                Fast, no browser, no network
+  unit/                Mostly offline; includes headless smoke (Playwright + axe) gate
   eval/                Metric-driven; CI subset + full run
   fixtures/
     html/              6 curated violation fixtures
@@ -43,7 +45,8 @@ scripts/
 ## Test commands
 
 ```bash
-make test-unit        # always fast, no deps
+make verify-ci        # SDK/CI parity: sync, Playwright, axe, lint, unit+smoke
+make test-unit        # bare pytest; smoke fails without axe.min.js + Chromium
 make eval             # CI eval (WCAG_MOCK_AXE=1, no browser; uses .axe.json sidecars)
 make eval-full        # full eval (Playwright + Chromium; no model server)
 make check-regression # gate
@@ -89,7 +92,7 @@ make lint
 
 | Run | WCAG_MOCK_AXE | Browser | Gate |
 |-----|---------------|---------|------|
-| `make test-unit` | not needed | no | always |
+| `make test-unit` | yes (smoke) | yes (smoke) | subset only; use `make verify-ci` on clean trees |
 | `make eval` (CI) | yes | no | schema_compliance_rate only |
 | `make eval-full` | no | yes | all 6 metrics |
 

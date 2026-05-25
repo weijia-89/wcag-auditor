@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Run full CI parity verify (sync, Playwright, axe, lint, unit+smoke).
 
+Canonical SDK/orchestrator verify — not bare ``uv sync && ruff && pytest``.
 Mirrors `.github/workflows/ci.yml` and `make verify-ci`.
 
     uv run python scripts/verify.py
     # or:
     make verify-ci
 
-# sdk-review F1: SDK orchestrator verify must match CI prerequisites, not bare pytest.
+# sdk-review F1: orchestrator verify must run this script (Playwright + axe before pytest).
 """
 from __future__ import annotations
 
@@ -32,8 +33,9 @@ def main() -> None:
 
     test_env = os.environ.copy()
     test_env["WCAG_NO_SANDBOX"] = "1"
+    # sdk-review F2: pytest flags match `.github/workflows/ci.yml` (no quiet/maxfail drift).
     _run(
-        ["uv", "run", "pytest", "tests/unit/", "-q", "--maxfail=5"],
+        ["uv", "run", "pytest", "tests/unit/", "-v"],
         env=test_env,
     )
 

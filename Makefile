@@ -20,6 +20,7 @@ eval-full:
 	@echo "Requires: Playwright-installed Chromium. No model server needed since 0.3.0."
 	uv run pytest tests/eval/ -v --json-report --json-report-file=eval_results_full.json
 
+# sdk-review F1: smoke gate needs axe + Chromium; use verify-ci for CI/SDK parity.
 test-unit:
 	uv run pytest tests/unit/ -v
 
