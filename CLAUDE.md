@@ -90,9 +90,11 @@ make lint
 
 ## CI vs local eval
 
+<!-- sdk-review F1: smoke runs real axe via Playwright, not WCAG_MOCK_AXE mock mode. -->
+
 | Run | WCAG_MOCK_AXE | Browser | Gate |
 |-----|---------------|---------|------|
-| `make test-unit` | yes (smoke) | yes (smoke) | subset only; use `make verify-ci` on clean trees |
+| `make test-unit` | no | yes (smoke only) | subset only; use `make verify-ci` on clean trees |
 | `make eval` (CI) | yes | no | schema_compliance_rate only |
 | `make eval-full` | no | yes | all 6 metrics |
 
