@@ -130,16 +130,25 @@ EOF
 
 ## Status checks (future)
 
-CI workflow **CI** (job `test`) runs on push/PR to `main`. To require it before merge, extend the script payload or ruleset:
+CI workflow **CI** (`.github/workflows/ci.yml`, job id `test`) runs on push/PR to `main`. To require it before merge, extend the script payload or ruleset.
+
+<!-- sdk-review F1: GitHub reports Actions checks as "workflow / job", not bare job id — wrong context blocks merges indefinitely. -->
+
+**Do not guess the context string.** GitHub Actions usually exposes the check as **`CI / test`** (workflow `name:` + job id), not `"test"` alone. Before enabling `required_status_checks`, copy the exact label from a **green** PR:
+
+- GitHub UI: PR → **Checks** tab → use the full check name shown there.
+- CLI: `gh pr checks <number> --repo "$GH_REPO"` (or open a PR and run without `<number>` on the current branch).
+
+Example payload after you have verified the name on a real PR:
 
 ```json
 "required_status_checks": {
   "strict": true,
-  "contexts": ["test"]
+  "contexts": ["CI / test"]
 }
 ```
 
-Until then, `required_status_checks` stays `null` so merges are not blocked on missing or flaky workflow names.
+Replace `"CI / test"` with whatever your PR actually shows if GitHub renames the workflow or job. Until then, `required_status_checks` stays `null` so merges are not blocked on missing or mismatched check names.
 
 ## Git workflow after protection
 
