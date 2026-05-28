@@ -1,16 +1,19 @@
 # Roadmap
 
-Updated 2026-05-25. Order within each section reflects priority, not commitment. None of this is a release schedule.
+Updated 2026-05-28. Order within each section reflects priority, not commitment. None of this is a release schedule.
 
 ## Next
 
-Housekeeping first. There's a small set of items that block the eval numbers from being trustworthy, and until these land, `make eval-full` is informative but not a gate. The baseline is synthetic and the install path isn't reproducible. None of those are blocking in the sense that the tool won't run, but they are blocking in the sense that you can't trust the numbers, and a tool whose eval results you can't trust is harder to defend when it matters.
+Housekeeping first. A few items still block treating `make eval-full` as a hard gate everywhere.
 
 **Done (2026-05):** SHA-pinned `axe.min.js` via jsDelivr/npm bundle + SHA256 verify in `scripts/download_axe.py` (axe-core 4.10.2).
 
-- **Real eval baseline.** `eval_baseline.json` currently reflects a synthetic run. Capture numbers from `make eval-full` against the curated fixtures with the deterministic `RuleEngine`, commit them, and let `--accept-zero-baseline` retire. The regression gate isn't useful until the baseline reflects a real run.
-- **Hash-pinned lockfile.** `pyproject.toml` doesn't pin transitive deps right now, which means the install path is not reproducible across machines, which means "it works on my laptop" is doing too much work. Switch to `uv pip compile --generate-hashes` and check the resulting `requirements.txt` into the repo.
-- **Test the `Auditor` class directly.** Today `axe_runner`, the fix engine shape, and the regression gate all have unit coverage. `auditor.audit` is exercised only end-to-end. Add a unit test that injects a stub `FixEngineProtocol` implementation and a fake violation list, so an `auditor.py` refactor shows up in tests before it shows up in prod.
+**Done (2026-05-28):** **Real eval baseline** — [#5](https://github.com/weijia-89/wcag-auditor/pull/5) committed fixture-run metrics to `eval_baseline.json` (Playwright + axe + `RuleEngine`).
+
+**Done (2026-05-28):** **Auditor unit coverage** — [#6](https://github.com/weijia-89/wcag-auditor/pull/6) extends `tests/unit/test_auditor.py` for orchestration with `RuleEngine` (still not a full injected `FixEngineProtocol` fake-violation harness).
+
+- **Hash-pinned lockfile.** `pyproject.toml` doesn't pin transitive deps right now, which means the install path is not reproducible across machines. Switch to `uv pip compile --generate-hashes` and check the resulting `requirements.txt` into the repo.
+- **Test the `Auditor` class with injected violations.** Add a unit test that injects a stub `FixEngineProtocol` and a fake violation list (no browser), so an `auditor.py` refactor fails in unit tests before CI's fixture smoke.
 
 ## Later
 
