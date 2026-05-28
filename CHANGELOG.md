@@ -10,6 +10,18 @@ All notable changes go here. Format: [Keep a Changelog](https://keepachangelog.c
 - **`scripts/download_axe.py` npm CDN source.** GitHub release assets no longer ship `axe.min.js`; download now pulls from the pinned jsDelivr/npm bundle with an updated SHA256.
 - **Placeholder guard fix.** `_check_axe_installed` no longer treats legitimate minified axe bundles as placeholders solely because they contain `throw new Error`.
 
+---
+
+## 2026-05-28
+
+### Added
+
+- **Auditor unit tests for stub fix engine** ([#6](https://github.com/weijia-89/wcag-auditor/pull/6)): expands `tests/unit/test_auditor.py` coverage for `RuleEngine` delegation, batch sizing, and report assembly without Playwright.
+
+### Changed
+
+- **Real eval baseline** ([#5](https://github.com/weijia-89/wcag-auditor/pull/5)): `eval_baseline.json` now holds fixture-run metrics from Playwright + axe + `RuleEngine` (replaces synthetic zeros).
+
 ## [0.3.1] - 2026-05-15
 
 ### Changed

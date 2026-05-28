@@ -12,6 +12,8 @@ axe-core catches roughly 30-40% of WCAG 2.2 issues, and this tool does not chang
 
 Results land in a SQLite history at `~/.local/share/wcag-auditor/audits.db`, a local file with no account behind it, no sync to anywhere, and no SaaS dashboard ingesting your usage. You can query it directly from your shell if you want to.
 
+Regression against curated fixtures uses a committed baseline (`eval_baseline.json`) from real Playwright + axe + `RuleEngine` runs ([#5](https://github.com/weijia-89/wcag-auditor/pull/5)); `make check-regression` compares your run to those numbers.
+
 ## Install
 
 ```bash
