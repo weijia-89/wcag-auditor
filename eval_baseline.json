@@ -1,10 +1,10 @@
 {
-  "schema_compliance_rate": 0.0,
-  "criterion_accuracy": 0.0,
-  "fix_applicability": 0.0,
-  "hallucination_rate": 0.0,
-  "false_negative_rate": 0.0,
-  "impact_level_accuracy": 0.0,
+  "schema_compliance_rate": 1.0,
+  "criterion_accuracy": 1.0,
+  "fix_applicability": 0.6,
+  "hallucination_rate": 1.0,
+  "false_negative_rate": 0.4,
+  "impact_level_accuracy": 0.8,
   "_ci_note": "Only schema_compliance_rate is CI-checked (WCAG_MOCK_AXE=1). All others require make eval-full.",
-  "_note": "Update manually after first full eval run. Never update via script."
+  "_note": "Updated from real eval run against curated fixtures (Playwright + axe + RuleEngine). Maintain manually."
 }
